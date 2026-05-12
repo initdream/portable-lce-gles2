@@ -4,25 +4,6 @@
 
 This project is a heavily modified version of the Minecraft Console Legacy Edition codebase, aimed at porting old Minecraft (TU19/1.6.1) to different platforms and refactoring the codebase to improve organization and use modern C++ features.
 
-## Status
-
-| - | - | - | - |
-| **app** | `desktop` | `desktop` | `desktop` |
-| **ui** | `java`, `shiggy`[^2] | `java`, `shiggy`[^2] | `java` |
-| **fs** | `std` | `std` | `std` |
-| **renderer** | `gl` | `gl` | `gl` |
-| **sound** | `miniaudio` | `miniaudio` | `miniaudio` |
-| **input** | `sdl2` | `sdl2` | `sdl2` |
-| **thread** | `std` | `std` | `std` |
-| **game** | `stub` | `stub` | `stub` |
-| **network** | `stub` | `stub` | `stub` |
-| **storage** | `stub` | `stub` | `stub` |
-| **profile** | `stub` | `stub` | `stub` |
-| **leaderboard** | `stub` | `stub` | `stub` |
-
-[^2]: `-Dui_backend=shiggy` supports the x86-64 architecture with AVX2 extensions only.
-
-
 ## Building (Linux)
 
 ### Prerequisites
