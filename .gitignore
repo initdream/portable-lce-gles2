@@ -8,6 +8,7 @@
 !/docs/
 !/targets/
 !/scripts/
+!/subprojects/glad/
 !/subprojects/
 /subprojects/*
 !/subprojects/*.wrap
