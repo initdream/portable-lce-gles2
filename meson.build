@@ -77,6 +77,9 @@ endif
 if get_option('ui_backend') == 'java'
     global_cpp_defs += '-DENABLE_JAVA_GUIS'
 endif
+if get_option('renderer') == 'gles'
+    global_cpp_defs += ['-DGLES']
+endif
 
 if get_option('occlusion_culling') == 'off'
     global_cpp_defs += ['-DOCCLUSION_MODE_NONE']

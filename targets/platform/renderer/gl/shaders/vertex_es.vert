@@ -1,13 +1,13 @@
 R"GLSL(
-#version 300 es
+#version 100
 precision highp float;
 precision highp int;
 
-layout(location=0) in vec3  aPos;
-layout(location=1) in vec2  aUV0;
-layout(location=2) in vec4  aColor;
-layout(location=3) in vec3  aNormal;
-layout(location=4) in ivec2 aLMraw;
+attribute vec3 aPos;
+attribute vec2 aUV0;
+attribute vec4 aColor;
+attribute vec3 aNormal;
+attribute vec2 aLMraw;
 
 uniform mat4  uMVP;
 uniform mat4  uMV;
@@ -28,10 +28,10 @@ uniform float uFogDensity;
 uniform vec4  uLMTransform;
 uniform vec2  uGlobalLM;
 
-out vec2  vUV0;
-out vec2  vUV1;
-out vec4  vColor;
-out float vFogFactor;
+varying vec2  vUV0;
+varying vec2  vUV1;
+varying vec4  vColor;
+varying float vFogFactor;
 
 void main() {
     vec4 aPos4   = vec4(aPos + uChunkOffset, 1.0);
@@ -39,10 +39,10 @@ void main() {
     gl_Position  = uMVP * aPos4;
     vUV0 = (uTexMat0 * vec4(aUV0, 0.0, 1.0)).xy; 
 
-    vec2 lm = (aLMraw.x <= -500) ? uGlobalLM : vec2(aLMraw);
+    vec2 lm = (aLMraw.x <= -500.0) ? uGlobalLM : aLMraw;
     vUV1 = (lm / 256.0) * uLMTransform.xy + uLMTransform.zw;
 
-    bool sentinel = all(equal(aColor, vec4(0.0)));
+    bool sentinel = (aColor.r == 0.0 && aColor.g == 0.0 && aColor.b == 0.0 && aColor.a == 0.0);
     vec4 col = sentinel ? uBaseColor : aColor.abgr;
     if (uLighting == 1) {
         vec3 n = normalize(uNormalMatrix * aNormal) * uNormalSign;

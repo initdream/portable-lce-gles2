@@ -89,6 +89,7 @@ static const char* FRAG_SRC =
 // MARK: OpenGL state
 
 // Hello SDL and opengl 3.3
+// bye bye opengl 3.3, hello gles2
 static SDL_Window* s_window = nullptr;
 static SDL_GLContext s_glContext = nullptr;
 static bool s_shouldClose = false;
@@ -179,6 +180,13 @@ static GLuint linkProgram(GLuint v, GLuint f) {
     GLuint p = glCreateProgram();
     glAttachShader(p, v);
     glAttachShader(p, f);
+
+    glBindAttribLocation(p, 0, "aPos");
+    glBindAttribLocation(p, 1, "aUV0");
+    glBindAttribLocation(p, 2, "aColor");
+    glBindAttribLocation(p, 3, "aNormal");
+    glBindAttribLocation(p, 4, "aLMraw");
+
     glLinkProgram(p);
     GLint ok = 0;
     glGetProgramiv(p, GL_LINK_STATUS, &ok);
@@ -530,8 +538,8 @@ static void pushRenderState() {
     flushMatrices();
 }
 
-static GLuint s_sVAO_std = 0, s_sVBO_std = 0;
-static GLsizeiptr s_streamVBOSize = 0;
+static GLuint s_sVBO_std = 0;
+static GLsizeiptr s_streamVBOSize = 0; 
 
 static void bindStdAttribs() {
     glEnableVertexAttribArray(0);
@@ -543,17 +551,12 @@ static void bindStdAttribs() {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 32, (void*)12);
     glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, 32, (void*)20);
     glVertexAttribPointer(3, 3, GL_BYTE, GL_TRUE, 32, (void*)24);
-    glVertexAttribIPointer(4, 2, GL_SHORT, 32, (void*)28);
+    //Changed IPointer to Pointer
+    glVertexAttribPointer(4, 2, GL_SHORT, GL_FALSE, 32, (void*)28); 
 }
 
-static void initStreamingVAOs() {
-    glGenVertexArrays(1, &s_sVAO_std);
+static void initStreamingVBOs() {
     glGenBuffers(1, &s_sVBO_std);
-    glBindVertexArray(s_sVAO_std);
-    glBindBuffer(GL_ARRAY_BUFFER, s_sVBO_std);
-    bindStdAttribs();
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 // Chunk buffer pool (shared, protected by s_glCallMtx)
@@ -566,7 +569,7 @@ struct ChunkDrawCall {
 struct ChunkBuffer {
     GLuint vbo = 0;
     // each chunks has its one VAO now
-    GLuint vao = 0;
+    //GLuint vao = 0;
     std::vector<ChunkDrawCall> draws;
     std::vector<uint8_t> rawVerts;
     bool valid = false;
@@ -576,10 +579,10 @@ struct ChunkBuffer {
             glDeleteBuffers(1, &vbo);
             vbo = 0;
         }
-        if (vao) {
-            glDeleteVertexArrays(1, &vao);
-            vao = 0;
-        }
+        //if (vao) {
+        //    glDeleteVertexArrays(1, &vao);
+        //    vao = 0;
+        //}
         draws.clear();
         rawVerts.clear();
         valid = false;
@@ -640,7 +643,7 @@ void GLRenderer::Initialise() {
         s_windowHeight = (int)(dm.h * 0.4f);
     }
 #ifdef GLES
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
 #else
@@ -666,9 +669,23 @@ void GLRenderer::Initialise() {
         fprintf(stderr, "[4J_Render] Context: %s\n", SDL_GetError());
         return;
     }
-#ifndef GLES
-    gl3_load();
-#endif
+
+    // Always initialize GLEW, even for GLES.
+    glewExperimental = GL_TRUE;
+    if (glewInit() != GLEW_OK) {
+        fprintf(stderr, "[4J_Render] ERROR: glewInit failed\n");
+        return;
+    }
+    
+
+    while (glGetError() != GL_NO_ERROR);
+    fprintf(stderr, "=== OPENGL CONTEXT INFO ===\n");
+    fprintf(stderr, "Vendor:   %s\n", glGetString(GL_VENDOR));
+    fprintf(stderr, "Renderer: %s\n", glGetString(GL_RENDERER));
+    fprintf(stderr, "Version:  %s\n", glGetString(GL_VERSION));
+    fprintf(stderr, "GLSL:     %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+    fprintf(stderr, "===========================\n");
+    
     int fw, fh;
     SDL_GetWindowSize(s_window, &fw, &fh);
     onFramebufferResize(fw, fh);
@@ -686,7 +703,7 @@ void GLRenderer::Initialise() {
     ::glClearColor(0, 0, 0, 1);
     glViewport(0, 0, s_windowWidth, s_windowHeight);
     s_shader.build(VERT_SRC, FRAG_SRC);
-    initStreamingVAOs();
+    initStreamingVBOs();
 
     s_mainThreadId = std::this_thread::get_id();
     s_mainThreadSet = true;
@@ -800,7 +817,7 @@ void GLRenderer::Shutdown() {
         for (auto& kv : s_chunkPool) kv.second.destroy();
         s_chunkPool.clear();
     }
-    glDeleteVertexArrays(1, &s_sVAO_std);
+    //glDeleteVertexArrays(1, &s_sVAO_std);
     glDeleteBuffers(1, &s_sVBO_std);
     if (s_shader.prog) glDeleteProgram(s_shader.prog);
     if (s_glContext) {
@@ -911,17 +928,17 @@ void GLRenderer::DrawVertices(ePrimitiveType ptype, int count, void* dataIn,
     std::lock_guard<std::mutex> lk(s_glCallMtx);
     pushRenderState();
 
-    glBindVertexArray(s_sVAO_std);
     glBindBuffer(GL_ARRAY_BUFFER, s_sVBO_std);
 
-    // Standard orphaning
     glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)bytes, nullptr, GL_STREAM_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)bytes, dataIn);
     s_streamVBOSize = (GLsizeiptr)bytes;
 
+    // Call standard attributes right before drawing
+    bindStdAttribs();
+
     glDrawArrays(glMode, 0, count);
 
-    glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -1002,14 +1019,10 @@ bool GLRenderer::CBuffCall(int index, bool) {
             return false;
         }
 
-        glGenVertexArrays(1, &cb.vao);
         glGenBuffers(1, &cb.vbo);
-        glBindVertexArray(cb.vao);
         glBindBuffer(GL_ARRAY_BUFFER, cb.vbo);
         glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)cb.rawVerts.size(),
                      cb.rawVerts.data(), GL_STATIC_DRAW);
-        bindStdAttribs();  // single time bindstdattrib
-        glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         cb.rawVerts.clear();
@@ -1019,9 +1032,13 @@ bool GLRenderer::CBuffCall(int index, bool) {
 
     pushRenderState();
 
-    glBindVertexArray(cb.vao);
+    // Draw phase
+    glBindBuffer(GL_ARRAY_BUFFER, cb.vbo);
+    bindStdAttribs(); // Bind attributes right before drawing
+
     for (const auto& dc : cb.draws) glDrawArrays(dc.prim, dc.first, dc.count);
-    glBindVertexArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     return true;
 }
@@ -1313,23 +1330,35 @@ void GLRenderer::TextureBindVertex(int idx, bool scaleLight) {
     }
 }
 void GLRenderer::TextureSetTextureLevels(int l) {
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, l > 0 ? l - 1 : 0);
+    // GL_TEXTURE_MAX_LEVEL is not supported in GLES 2.0. 
+    // We only need to toggle the min filter to enable/disable mipmapping.
     if (l > 1)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                        GL_NEAREST_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
     else
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 }
 int GLRenderer::TextureGetTextureLevels() { return 1; }
-void GLRenderer::TextureData(int w, int h, void* d, int lvl, eTextureFormat) {
-    glTexImage2D(GL_TEXTURE_2D, lvl, GL_RGBA, w, h, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, d);
+
+bool isPowerOfTwo(int n) {
+    return (n > 0 && (n & (n - 1)) == 0);
+}
+
+void GLRenderer::TextureData(int w, int h, void* d, int lvl, eTextureFormat format) {
+    glTexImage2D(GL_TEXTURE_2D, lvl, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, d);
+    
     if (lvl == 0) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        GLint maxLvl = 0;
-        glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, &maxLvl);
-        if (maxLvl == 0)
+
+        if (isPowerOfTwo(w) && isPowerOfTwo(h)) {
+            glGenerateMipmap(GL_TEXTURE_2D);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        } else {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        }
     }
 }
 void GLRenderer::TextureDataUpdate(int xo, int yo, int w, int h, void* d,
@@ -1405,7 +1434,6 @@ void glDeleteTextures_4J(int n, const unsigned int* textures) {
 
 #ifdef GLES
 extern "C" {
-extern void glClearDepthf(float depth);
 void glClearDepth(double depth) { glClearDepthf((float)depth); }
 void glTexGeni(unsigned int, unsigned int, int) {}
 void glTexGenfv(unsigned int, unsigned int, const float*) {}
