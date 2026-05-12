@@ -11,7 +11,6 @@ if get_option('renderer') == 'gles'
     platform_renderer_gl_dependencies += dependency('glesv2')
     platform_renderer_gl_defs = ['-DGLES']
 else
-    platform_renderer_gl_dependencies += [dependency('gl')]
     platform_renderer_gl_defs = []
 endif
 

@@ -1,5 +1,7 @@
 #pragma once
-
+#include <glad/glad.h>
+#include "java/IntBuffer.h"   
+#include "java/ByteBuffer.h"
 // windows hack: Windows SDK OpenGL headers include WINGDIAPI in their declarations,
 // which can only be found in the Windows API
 #if defined(_WIN32)
@@ -13,10 +15,16 @@
 #include "java/File.h"
 #include "renderer/gl/gl_compat.h"
 
-#undef GL_SMOOTH
-#undef GL_FLAT
-static const int GL_SMOOTH = 0x1D01;
-static const int GL_FLAT = 0x1D00;
+
+
+#ifndef GL_SMOOTH
+#define GL_SMOOTH 0x1D01
+#endif
+#ifndef GL_FLAT
+#define GL_FLAT 0x1D00
+#endif
+
+#define glad_glShadeModel(mode) (void)0
 
 class FloatBuffer;
 class IntBuffer;
@@ -44,11 +52,11 @@ void glCallLists(IntBuffer*);
 
 class GL11 {
 public:
-    static const int GL_SMOOTH = 0x1D01;
-    static const int GL_FLAT = 0x1D00;
 #undef glShadeModel
 #define GL_SHADEMODEL_IS_FUNCTION
-    static void glShadeModel(int mode) { glad_glShadeModel(mode); }
+    static void glShadeModel(int mode) { 
+        //glad_glShadeModel(mode); 
+    }
 };
 #undef GL_ARRAY_BUFFER_ARB
 #undef GL_STREAM_DRAW_ARB
@@ -56,9 +64,33 @@ class ARBVertexBufferObject {
 public:
     static const int GL_ARRAY_BUFFER_ARB = 0x8892;
     static const int GL_STREAM_DRAW_ARB = 0x88E0;
-    static void glBindBufferARB(int, int) {}
-    static void glBufferDataARB(int, ByteBuffer*, int) {}
-    static void glGenBuffersARB(IntBuffer*) {}
+
+    static void bindBuffer(int target, int buffer) {
+        if (glad_glBindBuffer) glad_glBindBuffer((GLenum)target, (GLuint)buffer);
+    }
+
+    static void bufferData(int target, ByteBuffer* data, int usage) {
+        if (glad_glBufferData && data) {
+            glad_glBufferData((GLenum)target, (GLsizeiptr)data->limit(), data->getBuffer(), (GLenum)usage);
+        }
+    }
+
+    static void genBuffers(IntBuffer* buf) {
+        if (glad_glGenBuffers && buf) {
+            GLuint id = 0;
+            glad_glGenBuffers(1, &id);
+            int* raw = (int*)buf->getBuffer();
+            raw[buf->position()] = (int)id;
+        }
+    }
+
+    static void deleteBuffers(IntBuffer* buf) {
+        if (glad_glDeleteBuffers && buf) {
+            int* raw = (int*)buf->getBuffer();
+            GLuint id = (GLuint)raw[buf->position()];
+            glad_glDeleteBuffers(1, &id);
+        }
+    }
 };
 
 class Level;

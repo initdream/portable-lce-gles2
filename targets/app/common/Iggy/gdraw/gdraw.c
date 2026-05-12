@@ -10,6 +10,7 @@
 #if defined(__APPLE__) || defined (__linux__)
 #include "SDL_opengl.h"
 
+
 typedef void(APIENTRY* PFNGLGENBUFFERSPROC)(GLsizei, GLuint*);
 typedef void(APIENTRY* PFNGLDELETEBUFFERSPROC)(GLsizei, const GLuint*);
 typedef void(APIENTRY* PFNGLBINDBUFFERPROC)(GLenum, GLuint);

@@ -16,7 +16,115 @@
 
 // #include "gl3_loader.h"
 // NOTE: gl3_loader.h must be included before these two
+#define GLAD_GLES2
 #include <glad/glad.h>
+
+#define __gl_h_ 
+#define __gltypes_h_
+#define __glext_h_
+
+#define glNormal3f(x, y, z) (void)0
+#define glTexGeni(coord, pname, param) (void)0
+
+#ifndef GL_NORMALIZE
+#define GL_NORMALIZE 0x0BA1
+#endif
+
+#ifndef GL_POLYGON_OFFSET_LINE
+#define GL_POLYGON_OFFSET_LINE 0x2A02
+#endif
+
+#ifndef GL_TEXTURE_GEN_MODE
+#define GL_S 0x2000
+#define GL_T 0x2001
+#define GL_R 0x2002
+#define GL_Q 0x2003
+#define GL_TEXTURE_GEN_MODE 0x2500
+#define GL_OBJECT_LINEAR 0x2401
+#endif
+
+#ifndef glClearDepth
+#define glClearDepth glClearDepthf
+#endif
+
+#ifndef GL_COLOR_MATERIAL
+#define GL_COLOR_MATERIAL 0x0B57
+#endif
+
+#ifndef GL_FRONT_AND_BACK
+#define GL_FRONT_AND_BACK 0x0408
+#endif
+
+#ifndef GL_AMBIENT_AND_DIFFUSE
+#define GL_AMBIENT_AND_DIFFUSE 0x1602
+#endif
+
+#ifndef glColorMaterial
+#define glColorMaterial(face, mode) (void)0
+#endif
+
+#undef glActiveTexture
+#define glActiveTexture glad_glActiveTexture
+#undef glBindTexture
+#define glBindTexture glad_glBindTexture
+#undef glBlendFunc
+#define glBlendFunc glad_glBlendFunc
+#undef glClear
+#define glClear glad_glClear
+#undef glClearColor
+#define glClearColor glad_glClearColor
+#undef glClearStencil
+#define glClearStencil glad_glClearStencil
+#undef glColorMask
+#define glColorMask glad_glColorMask
+#undef glCompressedTexImage2D
+#define glCompressedTexImage2D glad_glCompressedTexImage2D
+#undef glCopyTexSubImage2D
+#define glCopyTexSubImage2D glad_glCopyTexSubImage2D
+#undef glDeleteTextures
+#define glDeleteTextures glad_glDeleteTextures
+#undef glDepthFunc
+#define glDepthFunc glad_glDepthFunc
+#undef glDepthMask
+#define glDepthMask glad_glDepthMask
+#undef glDisable
+#define glDisable glad_glDisable
+#undef glDrawArrays
+#define glDrawArrays glad_glDrawArrays
+#undef glEnable
+#define glEnable glad_glEnable
+#undef glGenTextures
+#define glGenTextures glad_glGenTextures
+#undef glGetError
+#define glGetError glad_glGetError
+#undef glGetIntegerv
+#define glGetIntegerv glad_glGetIntegerv
+#undef glPixelStorei
+#define glPixelStorei glad_glPixelStorei
+#undef glScissor
+#define glScissor glad_glScissor
+#undef glStencilFunc
+#define glStencilFunc glad_glStencilFunc
+#undef glStencilMask
+#define glStencilMask glad_glStencilMask
+#undef glStencilOp
+#define glStencilOp glad_glStencilOp
+#undef glTexParameteri
+#define glTexParameteri glad_glTexParameteri
+#undef glTexParameteriv
+#define glTexParameteriv glad_glTexParameteriv
+#undef glViewport
+#define glViewport glad_glViewport
+#undef glFlush
+#define glFlush glad_glFlush
+#undef glGetString
+#define glGetString glad_glGetString
+#undef glGetProgramiv
+#define glGetProgramiv glad_glGetProgramiv
+#undef glGetProgramInfoLog
+#define glGetProgramInfoLog glad_glGetProgramInfoLog
+#undef glUseProgram
+#define glUseProgram glad_glUseProgram
 
 #include <cstdint>
 #include <cstdlib>
@@ -486,7 +594,7 @@ void glTexImage2D_4J(int target, int level, int internalformat, int width,
 template <typename T>
 inline void glGenTextures_4J(T* buf) {
     unsigned int id = 0;
-    ::glGenTextures(1, &id);
+    glGenTextures(1, &id);
     buf->put((int)id);
     buf->flip();
 }
@@ -494,7 +602,7 @@ template <typename T>
 inline void glDeleteTextures_4J(T* buf) {
     if (buf->limit() > 0) {
         unsigned int id = (unsigned int)buf->get(0);
-        ::glDeleteTextures(1, &id);
+        glDeleteTextures(1, &id);
     }
 }
 template <typename T>
@@ -511,7 +619,7 @@ inline void glTexImage2D_4J(int target, int level, int internalformat,
                             int width, int height, int border, int format,
                             int type, T* pixels) {
     void* data = pixels ? pixels->getBuffer() : nullptr;
-    ::glTexImage2D((unsigned int)target, level, internalformat, width, height,
+    glTexImage2D((unsigned int)target, level, internalformat, width, height,
                    border, (unsigned int)format, (unsigned int)type, data);
 }
 template <typename T>
@@ -550,19 +658,19 @@ template <typename T>
 inline void glTexGen_4J(int coord, int pname, T* params) {}
 inline void glReadPixels_4J(int x, int y, int width, int height, int format,
                             int type, void* pixels) {
-    ::glReadPixels(x, y, width, height, (unsigned int)format,
+    glReadPixels(x, y, width, height, (unsigned int)format,
                    (unsigned int)type, pixels);
 }
 inline void glReadPixels_4J(int x, int y, int width, int height, int format,
                             int type, unsigned char* pixels) {
-    ::glReadPixels(x, y, width, height, (unsigned int)format,
+    glReadPixels(x, y, width, height, (unsigned int)format,
                    (unsigned int)type, (void*)pixels);
 }
 // T -> .getBuffer()
 template <typename T>
 inline void glReadPixels_4J(int x, int y, int width, int height, int format,
                             int type, T* pixels) {
-    ::glReadPixels(x, y, width, height, (unsigned int)format,
+    glReadPixels(x, y, width, height, (unsigned int)format,
                    (unsigned int)type, pixels->getBuffer());
 }
 // redirect the functions to my own implementation, no more 2.1 funcs

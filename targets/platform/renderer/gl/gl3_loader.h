@@ -45,7 +45,7 @@
 #endif
 
 static inline bool gl3_load() {
-    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+    if (!gladLoadGLES2Loader((GLADloadproc)SDL_GL_GetProcAddress)) {
         fprintf(stderr, "[gl_loader] ERROR: GLAD initialization failed\n");
         return false;
     }
@@ -54,8 +54,8 @@ static inline bool gl3_load() {
         fprintf(stderr, "[gl_loader] ERROR: GLAD GLES2 loader failed\n");
     }
     #endif
-    if (!GLAD_GL_VERSION_3_3 && !GLAD_GL_ES_VERSION_2_0) {
-        fprintf(stderr, "[gl_loader] ERROR: Need GL 3.3 or GLES 2.0, not supported.\n");
+    if (!GLAD_GL_ES_VERSION_2_0) {
+        fprintf(stderr, "[gl_loader] ERROR: Need GLES 2.0, not supported.\n");
         return false;
     }
 

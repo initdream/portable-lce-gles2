@@ -12,6 +12,120 @@
 #include "platform/renderer/renderer.h"
 
 // undefine macros from header to avoid argument mismatch
+#include "gl3_loader.h"
+#undef glClearColor
+#define glClearColor glad_glClearColor
+#undef glClear
+#define glClear glad_glClear
+#undef glViewport
+#define glViewport glad_glViewport
+#undef glUseProgram
+#define glUseProgram glad_glUseProgram
+#undef glDrawArrays
+#define glDrawArrays glad_glDrawArrays
+#undef glBindBuffer
+#define glBindBuffer glad_glBindBuffer
+#undef glBufferData
+#define glBufferData glad_glBufferData
+#undef glBufferSubData
+#define glBufferSubData glad_glBufferSubData
+#undef glEnableVertexAttribArray
+#define glEnableVertexAttribArray glad_glEnableVertexAttribArray
+#undef glVertexAttribPointer
+#define glVertexAttribPointer glad_glVertexAttribPointer
+#undef glActiveTexture
+#define glActiveTexture glad_glActiveTexture
+#undef glBindTexture
+#define glBindTexture glad_glBindTexture
+#undef glTexParameteri
+#define glTexParameteri glad_glTexParameteri
+#undef glUniform1i
+#define glUniform1i glad_glUniform1i
+#undef glUniform1f
+#define glUniform1f glad_glUniform1f
+#undef glUniform2fv
+#define glUniform2fv glad_glUniform2fv
+#undef glUniform3fv
+#define glUniform3fv glad_glUniform3fv
+#undef glUniform4fv
+#define glUniform4fv glad_glUniform4fv
+#undef glUniformMatrix3fv
+#define glUniformMatrix3fv glad_glUniformMatrix3fv
+#undef glUniformMatrix4fv
+#define glUniformMatrix4fv glad_glUniformMatrix4fv
+#undef glReadPixels
+#define glReadPixels glad_glReadPixels
+#undef glGetError
+#define glGetError glad_glGetError
+#undef glGenTextures
+#define glGenTextures glad_glGenTextures
+#undef glDeleteTextures
+#define glDeleteTextures glad_glDeleteTextures
+#undef glTexImage2D
+#define glTexImage2D glad_glTexImage2D
+#undef glTexSubImage2D
+#define glTexSubImage2D glad_glTexSubImage2D
+#undef glGenerateMipmap
+#define glGenerateMipmap glad_glGenerateMipmap
+#undef glEnable
+#define glEnable glad_glEnable
+#undef glDisable
+#define glDisable glad_glDisable
+#undef glBlendFunc
+#define glBlendFunc glad_glBlendFunc
+#undef glDepthMask
+#define glDepthMask glad_glDepthMask
+#undef glColorMask
+#define glColorMask glad_glColorMask
+#undef glLineWidth
+#define glLineWidth glad_glLineWidth
+#undef glFrontFace
+#define glFrontFace glad_glFrontFace
+#undef glPolygonOffset
+#define glPolygonOffset glad_glPolygonOffset
+#undef glStencilFunc
+#define glStencilFunc glad_glStencilFunc
+#undef glStencilMask
+#define glStencilMask glad_glStencilMask
+#undef glDepthFunc
+#define glDepthFunc glad_glDepthFunc
+#undef glBlendColor
+#define glBlendColor glad_glBlendColor
+#undef glGetString
+#define glGetString glad_glGetString
+#undef glGetIntegerv
+#define glGetIntegerv glad_glGetIntegerv
+#undef glGetProgramiv
+#define glGetProgramiv glad_glGetProgramiv
+#undef glGetProgramInfoLog
+#define glGetProgramInfoLog glad_glGetProgramInfoLog
+#undef glCreateShader
+#define glCreateShader glad_glCreateShader
+#undef glShaderSource
+#define glShaderSource glad_glShaderSource
+#undef glCompileShader
+#define glCompileShader glad_glCompileShader
+#undef glGetShaderiv
+#define glGetShaderiv glad_glGetShaderiv
+#undef glGetShaderInfoLog
+#define glGetShaderInfoLog glad_glGetShaderInfoLog
+#undef glDeleteShader
+#define glDeleteShader glad_glDeleteShader
+#undef glCreateProgram
+#define glCreateProgram glad_glCreateProgram
+#undef glAttachShader
+#define glAttachShader glad_glAttachShader
+#undef glBindAttribLocation
+#define glBindAttribLocation glad_glBindAttribLocation
+#undef glLinkProgram
+#define glLinkProgram glad_glLinkProgram
+#undef glDeleteProgram
+#define glDeleteProgram glad_glDeleteProgram
+#undef glGetUniformLocation
+#define glGetUniformLocation glad_glGetUniformLocation
+#undef glFlush
+#define glFlush glad_glFlush
+
 #undef glGenTextures
 #define glGenTextures glad_glGenTextures
 #undef glDeleteTextures
@@ -687,7 +801,7 @@ void GLRenderer::Initialise() {
     if (!gl3_load()) {
         return;
     }
-    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+    if (!gladLoadGLES2Loader((GLADloadproc)SDL_GL_GetProcAddress)) {
         fprintf(stderr, "[4J_Render] ERROR: gladLoadGLLoader failed\n");
         return;
     }

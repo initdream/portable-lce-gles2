@@ -348,7 +348,7 @@ void Minecraft::init() {
 
     glEnable(GL_TEXTURE_2D);
     glad_glShadeModel(GL_SMOOTH);
-    glClearDepth(1.0);
+    glClearDepthf(1.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_ALPHA_TEST);

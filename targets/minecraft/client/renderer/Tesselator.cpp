@@ -73,7 +73,7 @@ Tesselator::Tesselator(int size) {
                   // GLContext.getCapabilities().GL_ARB_vertex_buffer_object;
     if (vboMode) {
         vboIds = MemoryTracker::createIntBuffer(vboCounts);
-        ARBVertexBufferObject::glGenBuffersARB(vboIds);
+        ARBVertexBufferObject::genBuffers(vboIds);
     }
 }
 

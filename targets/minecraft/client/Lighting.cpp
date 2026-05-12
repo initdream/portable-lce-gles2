@@ -5,6 +5,7 @@
 #include "platform/renderer/renderer.h"
 #include "platform/stubs.h"
 
+
 FloatBuffer* Lighting::lb = new FloatBuffer(16);
 
 void Lighting::turnOff() {
