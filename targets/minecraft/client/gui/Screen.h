@@ -10,6 +10,12 @@ class Minecraft;
 class Font;
 
 class Screen : public GuiComponent {
+public:
+    static float cursorX;
+    static float cursorY;
+    static float velX; 
+    static float velY;
+    bool lastButtonState = false;
 protected:
     Minecraft* minecraft;
 
@@ -28,7 +34,6 @@ protected:
 
 public:
     GuiParticles* particles;
-
     Screen();  // 4J added
     virtual void render(int xm, int ym, float a);
 
