@@ -94,6 +94,8 @@ endif
 add_project_arguments(global_cpp_defs, language: ['cpp', 'c'])
 add_project_arguments(global_cpp_args, language: 'cpp')
 
+glad_dep = subproject('glad').get_variable('glad_dep')
+
 subdir('targets/util')
 subdir('targets/java')
 subdir('targets/nbt')

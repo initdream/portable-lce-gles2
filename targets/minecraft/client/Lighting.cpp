@@ -38,7 +38,7 @@ void Lighting::turnOn() {
     glLight(GL_LIGHT1, GL_AMBIENT, getBuffer(0.0f, 0.0f, 0.0f, 1.0f));
     glLight(GL_LIGHT1, GL_SPECULAR, getBuffer(s, s, s, 1.0f));
 
-    glShadeModel(GL_FLAT);
+    glad_glShadeModel(GL_FLAT);
     glLightModel(GL_LIGHT_MODEL_AMBIENT, getBuffer(a, a, a, 1));
 }
 

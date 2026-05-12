@@ -72,7 +72,7 @@ void GuiComponent::fillGradient(int x0, int y0, int x1, int y1, int col1,
     glEnable(GL_BLEND);
     glDisable(GL_ALPHA_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glShadeModel(GL_SMOOTH);
+    glad_glShadeModel(GL_SMOOTH);
 
     Tesselator* t = Tesselator::getInstance();
     t->begin();
@@ -84,7 +84,7 @@ void GuiComponent::fillGradient(int x0, int y0, int x1, int y1, int col1,
     t->vertex((float)(x1), (float)(y1), blitOffset);
     t->end();
 
-    glShadeModel(GL_FLAT);
+    glad_glShadeModel(GL_FLAT);
     glDisable(GL_BLEND);
     glEnable(GL_ALPHA_TEST);
     glEnable(GL_TEXTURE_2D);

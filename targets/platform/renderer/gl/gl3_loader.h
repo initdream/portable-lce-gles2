@@ -8,7 +8,8 @@
 #include <windows.h>
 #endif
 
-#include <GL/glew.h>
+#include <glad/glad.h>
+#include <SDL_video.h>
 
 #include <cstdio>
 
@@ -30,21 +31,35 @@
 #ifndef GL_QUADS
 #define GL_QUADS 0x0007
 #endif
+#ifndef GL_PROJECTION
+#define GL_PROJECTION 0x1701
+#endif
+#ifndef GL_PROJECTION_MATRIX
+#define GL_PROJECTION_MATRIX 0x0BA7
+#endif
+#ifndef GL_MODELVIEW_MATRIX
+#define GL_MODELVIEW_MATRIX 0x0BA6
+#endif
+#ifndef GL_EXP
+#define GL_EXP 0x0800
+#endif
 
 static inline bool gl3_load() {
-    GLenum err = glewInit();
-    if (err != GLEW_OK) {
-        fprintf(stderr, "[gl_loader] ERROR: glewInit failed: %s\n",
-                glewGetErrorString(err));
+    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+        fprintf(stderr, "[gl_loader] ERROR: GLAD initialization failed\n");
         return false;
     }
-
-    if (!GLEW_VERSION_3_3) {
-        fprintf(stderr, "[gl_loader] ERROR: Need GL 3.3, not supported.\n");
+    #ifdef GLES
+    if (!gladLoadGLES2Loader((GLADloadproc)SDL_GL_GetProcAddress)) {
+        fprintf(stderr, "[gl_loader] ERROR: GLAD GLES2 loader failed\n");
+    }
+    #endif
+    if (!GLAD_GL_VERSION_3_3 && !GLAD_GL_ES_VERSION_2_0) {
+        fprintf(stderr, "[gl_loader] ERROR: Need GL 3.3 or GLES 2.0, not supported.\n");
         return false;
     }
 
     fprintf(stderr, "[gl_loader] GL %s loaded successfully.\n",
-            (const char*)glewGetString(GLEW_VERSION));
+            (const char*)glGetString(GL_VERSION));
     return true;
 }

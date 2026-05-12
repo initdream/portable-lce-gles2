@@ -1293,7 +1293,7 @@ void GameRenderer::renderLevel(float a, int64_t until) {
         setupFog(1, a);
 
         if (mc->options->ambientOcclusion) {
-            glShadeModel(GL_SMOOTH);
+            glad_glShadeModel(GL_SMOOTH);
         }
 
         //		Culler *frustum = new FrustumCuller();
@@ -1341,7 +1341,7 @@ void GameRenderer::renderLevel(float a, int64_t until) {
         Lighting::turnOff();
         levelRenderer->render(cameraEntity, 0, a, updateChunks);
 
-        glShadeModel(GL_FLAT);
+        glad_glShadeModel(GL_FLAT);
 
         if (cameraFlip == 0) {
             Lighting::turnOn();
@@ -1413,7 +1413,7 @@ void GameRenderer::renderLevel(float a, int64_t until) {
         if (true)  // (mc->options->fancyGraphics)
         {
             if (mc->options->ambientOcclusion) {
-                glShadeModel(GL_SMOOTH);
+                glad_glShadeModel(GL_SMOOTH);
             }
 
             PlatformRenderer.StateSetBlendFunc(GL_ZERO, GL_ONE);
@@ -1431,7 +1431,7 @@ void GameRenderer::renderLevel(float a, int64_t until) {
                                     // that anymore
             }
 
-            glShadeModel(GL_FLAT);
+            glad_glShadeModel(GL_FLAT);
         } else {
             levelRenderer->render(cameraEntity, 1, a, updateChunks);
         }

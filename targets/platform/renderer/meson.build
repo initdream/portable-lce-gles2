@@ -3,6 +3,7 @@ platform_renderer_gl_dependencies = [
     dependency('glm'),
     dependency('stb'),
     java_dep,
+    glad_dep,
 ]
 platform_renderer_gl_defs = []
 
@@ -10,7 +11,7 @@ if get_option('renderer') == 'gles'
     platform_renderer_gl_dependencies += dependency('glesv2')
     platform_renderer_gl_defs = ['-DGLES']
 else
-    platform_renderer_gl_dependencies += [dependency('gl'), dependency('glew')]
+    platform_renderer_gl_dependencies += [dependency('gl')]
     platform_renderer_gl_defs = []
 endif
 
@@ -24,4 +25,5 @@ lib_platform_renderer_gl = static_library(
 
 platform_renderer_gl_dep = declare_dependency(
     link_with: lib_platform_renderer_gl,
+    dependencies: platform_renderer_gl_dependencies,
 )

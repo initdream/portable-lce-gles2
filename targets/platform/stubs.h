@@ -48,7 +48,7 @@ public:
     static const int GL_FLAT = 0x1D00;
 #undef glShadeModel
 #define GL_SHADEMODEL_IS_FUNCTION
-    static void glShadeModel(int mode) { ::glShadeModel(mode); }
+    static void glShadeModel(int mode) { glad_glShadeModel(mode); }
 };
 #undef GL_ARRAY_BUFFER_ARB
 #undef GL_STREAM_DRAW_ARB

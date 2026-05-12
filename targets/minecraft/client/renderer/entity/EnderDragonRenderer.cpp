@@ -164,7 +164,7 @@ void EnderDragonRenderer::render(std::shared_ptr<Entity> _mob, double x,
         bindTexture(
             &CRYSTAL_BEAM_LOCATION);  // 4J was "/mob/enderdragon/beam.png"
 
-        glShadeModel(GL_SMOOTH);
+        glad_glShadeModel(GL_SMOOTH);
 
         float v0 = 0 - (mob->tickCount + a) *
                            0.005f;  // 4J - rate of movement changed from 0.01
@@ -188,7 +188,7 @@ void EnderDragonRenderer::render(std::shared_ptr<Entity> _mob, double x,
 
         t->end();
         glEnable(GL_CULL_FACE);
-        glShadeModel(GL_FLAT);
+        glad_glShadeModel(GL_FLAT);
         glDisable(GL_BLEND);
 
         glPopMatrix();
@@ -220,7 +220,7 @@ void EnderDragonRenderer::additionalRendering(
 
         Random random(432);
         glDisable(GL_TEXTURE_2D);
-        glShadeModel(GL_SMOOTH);
+        glad_glShadeModel(GL_SMOOTH);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
         glDisable(GL_ALPHA_TEST);
@@ -251,7 +251,7 @@ void EnderDragonRenderer::additionalRendering(
         glDepthMask(true);
         glDisable(GL_CULL_FACE);
         glDisable(GL_BLEND);
-        glShadeModel(GL_FLAT);
+        glad_glShadeModel(GL_FLAT);
         glColor4f(1, 1, 1, 1);
         glEnable(GL_TEXTURE_2D);
         glEnable(GL_ALPHA_TEST);

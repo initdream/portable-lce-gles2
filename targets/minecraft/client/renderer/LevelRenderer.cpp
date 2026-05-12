@@ -982,7 +982,7 @@ void LevelRenderer::renderSky(float alpha) {
         level[playerIndex]->getTimeOfDay(alpha), alpha);
     if (c != nullptr) {
         glDisable(GL_TEXTURE_2D);
-        glShadeModel(GL_SMOOTH);
+        glad_glShadeModel(GL_SMOOTH);
 
         glPushMatrix();
         {
@@ -1021,7 +1021,7 @@ void LevelRenderer::renderSky(float alpha) {
             t->end();
         }
         glPopMatrix();
-        glShadeModel(GL_FLAT);
+        glad_glShadeModel(GL_FLAT);
     }
 
     glEnable(GL_TEXTURE_2D);

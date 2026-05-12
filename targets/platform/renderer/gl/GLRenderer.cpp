@@ -13,8 +13,33 @@
 
 // undefine macros from header to avoid argument mismatch
 #undef glGenTextures
+#define glGenTextures glad_glGenTextures
 #undef glDeleteTextures
+#define glDeleteTextures glad_glDeleteTextures
 #undef glTexImage2D
+#define glTexImage2D glad_glTexImage2D
+#undef glEnable
+#define glEnable glad_glEnable
+#undef glDisable
+#define glDisable glad_glDisable
+#undef glBlendFunc
+#define glBlendFunc glad_glBlendFunc
+#undef glDepthMask
+#define glDepthMask glad_glDepthMask
+#undef glColorMask
+#define glColorMask glad_glColorMask
+#undef glLineWidth
+#define glLineWidth glad_glLineWidth
+#undef glFrontFace
+#define glFrontFace glad_glFrontFace
+#undef glPolygonOffset
+#define glPolygonOffset glad_glPolygonOffset
+#undef glStencilFunc
+#define glStencilFunc glad_glStencilFunc
+#undef glStencilMask
+#define glStencilMask glad_glStencilMask
+
+
 #undef glCallLists
 #undef glFog
 #undef glLight
@@ -23,17 +48,7 @@
 #undef glTexCoordPointer
 #undef glNormalPointer
 #undef glColorPointer
-#undef glVertexPointer
-#undef glEnable
-#undef glDisable
-#undef glBlendFunc
-#undef glDepthMask
-#undef glColorMask
-#undef glLineWidth
-#undef glFrontFace
-#undef glPolygonOffset
-#undef glStencilFunc
-#undef glStencilMask
+#undef glVertexPointe
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -366,9 +381,9 @@ static GLuint s_boundProgram = 0;
 static void glShadowSetBlend(bool e) {
     if (!(s_gl_shadow_mask & SHADOW_BLEND) || s_gl_state.blend != e) {
         if (e)
-            ::glEnable(GL_BLEND);
+            glEnable(GL_BLEND);
         else
-            ::glDisable(GL_BLEND);
+            glDisable(GL_BLEND);
         s_gl_state.blend = e;
         s_gl_shadow_mask |= SHADOW_BLEND;
     }
@@ -377,9 +392,9 @@ static void glShadowSetBlend(bool e) {
 static void glShadowSetCull(bool e) {
     if (!(s_gl_shadow_mask & SHADOW_CULL) || s_gl_state.cull != e) {
         if (e)
-            ::glEnable(GL_CULL_FACE);
+            glEnable(GL_CULL_FACE);
         else
-            ::glDisable(GL_CULL_FACE);
+            glDisable(GL_CULL_FACE);
         s_gl_state.cull = e;
         s_gl_shadow_mask |= SHADOW_CULL;
     }
@@ -388,9 +403,9 @@ static void glShadowSetCull(bool e) {
 static void glShadowSetDepthTest(bool e) {
     if (!(s_gl_shadow_mask & SHADOW_DEPTH) || s_gl_state.depth != e) {
         if (e)
-            ::glEnable(GL_DEPTH_TEST);
+            glEnable(GL_DEPTH_TEST);
         else
-            ::glDisable(GL_DEPTH_TEST);
+            glDisable(GL_DEPTH_TEST);
         s_gl_state.depth = e;
         s_gl_shadow_mask |= SHADOW_DEPTH;
     }
@@ -399,7 +414,7 @@ static void glShadowSetDepthTest(bool e) {
 static void glShadowSetBlendFunc(GLint s, GLint d) {
     if (!(s_gl_shadow_mask & SHADOW_BLEND_FUNC) || s_gl_state.blendSrc != s ||
         s_gl_state.blendDst != d) {
-        ::glBlendFunc(s, d);
+        glBlendFunc(s, d);
         s_gl_state.blendSrc = s;
         s_gl_state.blendDst = d;
         s_gl_shadow_mask |= SHADOW_BLEND_FUNC;
@@ -408,7 +423,7 @@ static void glShadowSetBlendFunc(GLint s, GLint d) {
 
 static void glShadowSetDepthMask(GLboolean e) {
     if (!(s_gl_shadow_mask & SHADOW_DEPTH_MASK) || s_gl_state.depthMask != e) {
-        ::glDepthMask(e);
+        glDepthMask(e);
         s_gl_state.depthMask = e;
         s_gl_shadow_mask |= SHADOW_DEPTH_MASK;
     }
@@ -419,7 +434,7 @@ static void glShadowSetColorMask(GLboolean r, GLboolean g, GLboolean b,
     if (!(s_gl_shadow_mask & SHADOW_COLOR_MASK) ||
         s_gl_state.colorMask[0] != r || s_gl_state.colorMask[1] != g ||
         s_gl_state.colorMask[2] != b || s_gl_state.colorMask[3] != a) {
-        ::glColorMask(r, g, b, a);
+        glColorMask(r, g, b, a);
         s_gl_state.colorMask[0] = r;
         s_gl_state.colorMask[1] = g;
         s_gl_state.colorMask[2] = b;
@@ -430,7 +445,7 @@ static void glShadowSetColorMask(GLboolean r, GLboolean g, GLboolean b,
 
 static void glShadowSetLineWidth(float w) {
     if (!(s_gl_shadow_mask & SHADOW_LINE_WIDTH) || s_gl_state.lineWidth != w) {
-        ::glLineWidth(w);
+        glLineWidth(w);
         s_gl_state.lineWidth = w;
         s_gl_shadow_mask |= SHADOW_LINE_WIDTH;
     }
@@ -439,7 +454,7 @@ static void glShadowSetLineWidth(float w) {
 static void glShadowSetFrontFace(GLenum mode) {
     if (!(s_gl_shadow_mask & SHADOW_FRONT_FACE) ||
         s_gl_state.frontFace != mode) {
-        ::glFrontFace(mode);
+        glFrontFace(mode);
         s_gl_state.frontFace = mode;
         s_gl_shadow_mask |= SHADOW_FRONT_FACE;
     }
@@ -450,16 +465,16 @@ static void glShadowSetPolygonOffset(float slope, float bias) {
     if (!(s_gl_shadow_mask & SHADOW_POLY_OFFSET) ||
         s_gl_state.polygon != enable) {
         if (enable)
-            ::glEnable(GL_POLYGON_OFFSET_FILL);
+            glEnable(GL_POLYGON_OFFSET_FILL);
         else
-            ::glDisable(GL_POLYGON_OFFSET_FILL);
+            glDisable(GL_POLYGON_OFFSET_FILL);
         s_gl_state.polygon = enable;
         s_gl_shadow_mask |= SHADOW_POLY_OFFSET;
     }
     if (enable) {
         if (!(s_gl_shadow_mask & SHADOW_POLY_OFFSET_PARAMS) ||
             s_gl_state.polySlope != slope || s_gl_state.polyBias != bias) {
-            ::glPolygonOffset(slope, bias);
+            glPolygonOffset(slope, bias);
             s_gl_state.polySlope = slope;
             s_gl_state.polyBias = bias;
             s_gl_shadow_mask |= SHADOW_POLY_OFFSET_PARAMS;
@@ -470,7 +485,7 @@ static void glShadowSetPolygonOffset(float slope, float bias) {
 static void glShadowSetStencil(GLenum fn, uint8_t ref, uint8_t fmask,
                                uint8_t wmask) {
     if (!(s_gl_shadow_mask & SHADOW_STENCIL) || !s_gl_state.stencil) {
-        ::glEnable(GL_STENCIL_TEST);
+        glEnable(GL_STENCIL_TEST);
         s_gl_state.stencil = true;
         s_gl_shadow_mask |= SHADOW_STENCIL;
     }
@@ -478,8 +493,8 @@ static void glShadowSetStencil(GLenum fn, uint8_t ref, uint8_t fmask,
         s_gl_state.stencilFunc != fn || s_gl_state.stencilRef != (GLint)ref ||
         s_gl_state.stencilMask != fmask ||
         s_gl_state.stencilWriteMask != wmask) {
-        ::glStencilFunc(fn, ref, fmask);
-        ::glStencilMask(wmask);
+        glStencilFunc(fn, ref, fmask);
+        glStencilMask(wmask);
         s_gl_state.stencilFunc = fn;
         s_gl_state.stencilRef = (GLint)ref;
         s_gl_state.stencilMask = fmask;
@@ -669,11 +684,11 @@ void GLRenderer::Initialise() {
         fprintf(stderr, "[4J_Render] Context: %s\n", SDL_GetError());
         return;
     }
-
-    // Always initialize GLEW, even for GLES.
-    glewExperimental = GL_TRUE;
-    if (glewInit() != GLEW_OK) {
-        fprintf(stderr, "[4J_Render] ERROR: glewInit failed\n");
+    if (!gl3_load()) {
+        return;
+    }
+    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+        fprintf(stderr, "[4J_Render] ERROR: gladLoadGLLoader failed\n");
         return;
     }
     
@@ -690,7 +705,7 @@ void GLRenderer::Initialise() {
     SDL_GetWindowSize(s_window, &fw, &fh);
     onFramebufferResize(fw, fh);
     glShadowSetDepthTest(true);
-    ::glDepthFunc(GL_LEQUAL);
+    glDepthFunc(GL_LEQUAL);
 #ifdef GLES
     glClearDepthf(1.0f);
 #else
@@ -699,8 +714,8 @@ void GLRenderer::Initialise() {
     glShadowSetBlend(true);
     glShadowSetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glShadowSetCull(true);
-    ::glCullFace(GL_BACK);
-    ::glClearColor(0, 0, 0, 1);
+    glCullFace(GL_BACK);
+    glClearColor(0, 0, 0, 1);
     glViewport(0, 0, s_windowWidth, s_windowHeight);
     s_shader.build(VERT_SRC, FRAG_SRC);
     initStreamingVBOs();
@@ -710,6 +725,8 @@ void GLRenderer::Initialise() {
     s_glCtx = s_glContext;
 
     SDL_GL_MakeCurrent(s_window, s_glContext);
+    s_sharedCtxCount = 0;
+/*
     for (int i = 0; i < MAX_SHARED_CTXS; i++) {
         SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
         SDL_Window* w = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED,
@@ -725,6 +742,7 @@ void GLRenderer::Initialise() {
         s_sharedCtxs[s_sharedCtxCount] = ctx;
         s_sharedCtxCount++;
     }
+*/
     SDL_GL_MakeCurrent(s_window, s_glContext);
     pushRenderState();
 
@@ -1150,7 +1168,7 @@ void GLRenderer::StateSetDepthMask(bool e) {
 }
 void GLRenderer::StateSetBlendEnable(bool e) { glShadowSetBlend(e); }
 void GLRenderer::StateSetBlendFunc(int s, int d) { glShadowSetBlendFunc(s, d); }
-void GLRenderer::StateSetDepthFunc(int f) { ::glDepthFunc(f); }
+void GLRenderer::StateSetDepthFunc(int f) { glDepthFunc(f); }
 void GLRenderer::StateSetFaceCull(bool e) { glShadowSetCull(e); }
 void GLRenderer::StateSetFaceCullCW(bool e) {
     glShadowSetFrontFace(e ? GL_CW : GL_CCW);
@@ -1413,35 +1431,44 @@ void GLRenderer::UpdateGamma(unsigned short usGamma) {
 
 int glGenTextures_4J() {
     GLuint id = 0;
-    ::glGenTextures(1, &id);
+    glGenTextures(1, &id);
     return (int)id;
 }
 
 void glGenTextures_4J(int n, unsigned int* textures) {
-    ::glGenTextures(n, textures);
+    glGenTextures(n, textures);
 }
 
 void glDeleteTextures_4J(int id) {
     GLuint uid = (GLuint)id;
-    ::glDeleteTextures(1, &uid);
+    glDeleteTextures(1, &uid);
 }
 
 void glDeleteTextures_4J(int n, const unsigned int* textures) {
-    ::glDeleteTextures(n, textures);
+    glDeleteTextures(n, textures);
 }
 
 // MARK: LinuxStubs
 
 #ifdef GLES
 extern "C" {
+#undef glClearDepth
 void glClearDepth(double depth) { glClearDepthf((float)depth); }
+#undef glTexGeni
 void glTexGeni(unsigned int, unsigned int, int) {}
+#undef glTexGenfv
 void glTexGenfv(unsigned int, unsigned int, const float*) {}
+#undef glTexCoordPointer
 void glTexCoordPointer(int, unsigned int, int, const void*) {}
+#undef glNormalPointer
 void glNormalPointer(unsigned int, int, const void*) {}
+#undef glColorPointer
 void glColorPointer(int, unsigned int, int, const void*) {}
+#undef glVertexPointer
 void glVertexPointer(int, unsigned int, int, const void*) {}
+#undef glEndList
 void glEndList(void) {}
+#undef glCallLists
 void glCallLists(int, unsigned int, const void*) {}
 }
 #endif

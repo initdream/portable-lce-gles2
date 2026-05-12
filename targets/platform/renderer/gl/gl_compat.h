@@ -16,7 +16,7 @@
 
 // #include "gl3_loader.h"
 // NOTE: gl3_loader.h must be included before these two
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 #include <cstdint>
 #include <cstdlib>
@@ -290,12 +290,8 @@
 #undef glDeleteLists
 #define glDeleteLists(list, range) PlatformRenderer.CBuffDelete(list, range)
 
-#ifndef GL_SHADEMODEL_IS_FUNCTION
 #undef glShadeModel
-#define glShadeModel(mode) \
-    do {                   \
-    } while (0)
-#endif
+#define glShadeModel glad_glShadeModel
 
 #undef glTranslatef
 #define glTranslatef(x, y, z)                      \
@@ -399,7 +395,7 @@
                  || (cap) == 0x0C62 /*GL_TEXTURE_GEN_R*/                \
                  || (cap) == 0x0C63 /*GL_TEXTURE_GEN_Q*/) { /* empty */ \
         } else                                                          \
-            ::glEnable(cap);                                            \
+            glad_glEnable(cap);                                           \
     } while (0)
 
 #undef glDisable
@@ -431,7 +427,7 @@
                  || (cap) == 0x0C62 /*GL_TEXTURE_GEN_R*/                \
                  || (cap) == 0x0C63 /*GL_TEXTURE_GEN_Q*/) { /* empty */ \
         } else                                                          \
-            ::glDisable(cap);                                           \
+            glad_glDisable(cap);                                           \
     } while (0)
 
 #undef glFogi
@@ -570,17 +566,30 @@ inline void glReadPixels_4J(int x, int y, int width, int height, int format,
                    (unsigned int)type, pixels->getBuffer());
 }
 // redirect the functions to my own implementation, no more 2.1 funcs
+#undef glGenTextures
 #define glGenTextures(...) glGenTextures_4J(__VA_ARGS__)
+#undef glDeleteTextures
 #define glDeleteTextures(...) glDeleteTextures_4J(__VA_ARGS__)
+#undef glTexCoordPointer
 #define glTexCoordPointer(a, b, c) glTexCoordPointer_4J(a, b, c)
+#undef glNormalPointer
 #define glNormalPointer(a, b) glNormalPointer_4J(a, b)
+#undef glColorPointer
 #define glColorPointer(a, b, c, d) glColorPointer_4J(a, b, c, d)
+#undef glVertexPointer
 #define glVertexPointer(a, b, c) glVertexPointer_4J(a, b, c)
+#undef glTexImage2D
 #define glTexImage2D(a, b, c, d, e, f, g, h, i) \
     glTexImage2D_4J(a, b, c, d, e, f, g, h, i)
+#undef glCallLists
 #define glCallLists(x) glCallLists_4J(x)
+#undef glReadPixels
 #define glReadPixels(a, b, c, d, e, f, g) glReadPixels_4J(a, b, c, d, e, f, g)
+#undef glFog
 #define glFog(a, b) glFog_4J(a, b)
+#undef glLight
 #define glLight(a, b, c) glLight_4J(a, b, c)
+#undef glLightModel
 #define glLightModel(a, b) glLightModel_4J(a, b)
+#undef glTexGen
 #define glTexGen(a, b, c) glTexGen_4J(a, b, c)
