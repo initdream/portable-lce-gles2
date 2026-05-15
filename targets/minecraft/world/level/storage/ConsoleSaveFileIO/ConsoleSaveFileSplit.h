@@ -79,7 +79,7 @@ private:
     // without any OS-specific calls.
 #if defined(_LARGE_WORLDS)
     static constexpr std::size_t MAX_SAVE_SIZE =
-        2u * 1024u * 1024u * 1024u;  // 2GB
+        128u * 1024u * 1024u; // 128GB
 #else
     static constexpr std::size_t MAX_SAVE_SIZE = 64u * 1024u * 1024u;  // 64MB
 #endif

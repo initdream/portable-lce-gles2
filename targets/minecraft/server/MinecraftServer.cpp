@@ -531,8 +531,7 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
     // deep with some sand tower falling, so increased the stacj to 256K from
     // 128k on other platforms (was already set to that on PS3 and Orbis)
 
-    m_postUpdateThread =
-        new C4JThread(runPostUpdate, this, "Post processing", 256 * 1024);
+    m_postUpdateThread = new C4JThread(runPostUpdate, this, "Post processing", 1024 * 1024); //1MB stack size
 
     m_postUpdateTerminate = false;
     m_postUpdateThread->setPriority(C4JThread::ThreadPriority::AboveNormal);
@@ -540,8 +539,8 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
 
     int64_t startTime = System::currentTimeMillis();
 
-    // 4J Stu - Added this to temporarily make starting games on vita faster
-    int r = 196;
+    // 4J Stu - Added this to temporarily make starting games on vita/aarch64 faster
+    int r = 32;
 
     //  4J JEV: load gameRules.
     ConsoleSavePath filepath(GAME_RULE_SAVENAME);
@@ -649,6 +648,27 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
 
     // Wait for post processing, then lighting threads, to end (post-processing
     // may make more lighting changes)
+
+
+    for (auto* level : levels) {
+        if (level == nullptr) continue;
+        CompoundTag* playerTag = level->getLevelStorage()->getPlayerIO()->loadPlayerDataTag(INVALID_XUID);
+        if (playerTag != nullptr && playerTag->contains("Pos")) {
+            ListTag<DoubleTag>* posList = (ListTag<DoubleTag>*)playerTag->getList("Pos");
+            if (posList && posList->size() >= 3) {
+                int px = (int)posList->get(0)->data;
+                int pz = (int)posList->get(2)->data;
+                Log::info("[loadLevel] Prioritizing chunks at player pos: %d, %d\n", px, pz);
+                for (int x = -1; x <= 1; ++x) {
+                    for (int z = -1; z <= 1; ++z) {
+                        level->cache->create((px >> 4) + x, (pz >> 4) + z, true);
+                    }
+                }
+            }
+            delete playerTag;
+        }
+    }
+
     m_postUpdateTerminate = true;
 
     postProcessTerminate(mcprogress);
