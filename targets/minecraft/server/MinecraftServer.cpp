@@ -446,7 +446,9 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
             newFormatSave = new ConsoleSaveFileSplit(name);
         }
 
-        newFormatSave->ReadEntriesFromFolderOnDisk(name);
+        if (!bLevelGenBaseSave) {
+            newFormatSave->ReadEntriesFromFolderOnDisk(name);
+        }
 
         storage = std::shared_ptr<McRegionLevelStorage>(
             new McRegionLevelStorage(newFormatSave, File("."), name, true));
