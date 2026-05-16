@@ -552,7 +552,7 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
 
     // 4J Stu - Added this to temporarily make starting games on vita/aarch64
     // faster
-    int r = 196;
+    int r = 32;
 
     //  4J JEV: load gameRules.
     ConsoleSavePath filepath(GAME_RULE_SAVENAME);
