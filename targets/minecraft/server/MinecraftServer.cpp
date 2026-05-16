@@ -219,6 +219,10 @@ bool MinecraftServer::initServer(int64_t seed, NetworkGameInitData* initData,
     int64_t levelNanoTime = System::nanoTime();
 
     std::string levelName = settings->getString("level-name", "world");
+    if (!g_pendingWorldName.empty()) {
+        levelName = g_pendingWorldName;
+        g_pendingWorldName = "";
+    }
     std::string levelTypeString;
 
     bool gameRuleUseFlatWorld = false;
