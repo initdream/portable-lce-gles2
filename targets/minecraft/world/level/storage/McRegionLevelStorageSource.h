@@ -17,9 +17,15 @@ public:
     class ChunkFile;
 
     McRegionLevelStorageSource(File dir);
-    virtual std::string getName();
-    virtual std::vector<LevelSummary*>* getLevelList();
-    virtual void clearAll();
+    virtual std::string getName() override;
+    virtual std::vector<LevelSummary*>* getLevelList() override;
+    virtual void clearAll() override;
+
+
+    virtual void renameLevel(const std::string& levelId,
+                             const std::string& newLevelName) override;
+    virtual void deleteLevel(const std::string& levelId) override;
+
     virtual std::shared_ptr<LevelStorage> selectLevel(
         ConsoleSaveFile* saveFile, const std::string& levelId,
         bool createPlayerDir);

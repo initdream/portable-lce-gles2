@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -14,6 +15,7 @@
 #include "minecraft/network/INetworkService.h"
 #include "minecraft/util/Log.h"
 #include "platform/storage/storage.h"
+#include "platform/input/input.h"
 // Needed for the &CGameNetworkManager::RunNetworkGameThreadProc address-of
 // below. Static thread procs can't be virtual; this one consumer keeps the
 // concrete type include.
@@ -31,6 +33,8 @@
 #include "platform/network/NetTypes.h"
 #include "platform/stubs.h"
 #include "util/StringHelpers.h"
+
+extern std::string g_pendingWorldName;
 
 CreateWorldScreen::CreateWorldScreen(Screen* lastScreen) {
     done = false;  // 4J added
@@ -208,8 +212,25 @@ void CreateWorldScreen::buttonClicked(Button* button) {
             worldName = "2slimey";
         }
 
+        // iterate saving dir
+        {
+            File savesDir = Minecraft::getSavesDirectory();
+            std::filesystem::path savesPath(savesDir.getPath());
+            std::string base = worldName;
+            std::string candidate = base;
+            int suffix = 2;
+            while (std::filesystem::exists(savesPath / candidate)) {
+                candidate = base + " " + std::to_string(suffix);
+                ++suffix;
+                if (suffix > 9999) break;
+            }
+            worldName = candidate;
+        }
+
         PlatformStorage.ResetSaveData();
         PlatformStorage.SetSaveTitle((char*)worldName.c_str());
+
+        g_pendingWorldName = worldName;
 
         std::string seedString = seedEdit->getValue();
 
@@ -374,10 +395,50 @@ void CreateWorldScreen::keyPressed(char ch, int eventKey) {
 void CreateWorldScreen::mouseClicked(int x, int y, int buttonNum) {
     Screen::mouseClicked(x, y, buttonNum);
 
-    if (!moreOptions)
+    if (!moreOptions) {
         nameEdit->mouseClicked(x, y, buttonNum);
-    else
+        if (nameEdit->inFocus) {
+            char wSaveName[128];
+            memset(wSaveName, 0, sizeof(wSaveName));
+            strncpy(wSaveName, nameEdit->getValue().c_str(),
+                    sizeof(wSaveName) - 1);
+            PlatformInput.RequestKeyboard(
+                "Enter World Name", wSaveName, 0, 32,
+                [this](bool bRes) -> int {
+                    if (bRes) {
+                        const char* text = PlatformInput.GetText();
+                        if (text && text[0] != '\0') {
+                            this->nameEdit->setValue(text);
+                            this->buttons[0]->active =
+                                this->nameEdit->getValue().length() > 0;
+                            this->updateResultFolder();
+                        }
+                    }
+                    return 0;
+                },
+                IPlatformInput::EKeyboardMode_Default);
+        }
+    } else {
         seedEdit->mouseClicked(x, y, buttonNum);
+        if (seedEdit->inFocus) {
+            char wSaveName[128];
+            memset(wSaveName, 0, sizeof(wSaveName));
+            strncpy(wSaveName, seedEdit->getValue().c_str(),
+                    sizeof(wSaveName) - 1);
+            PlatformInput.RequestKeyboard(
+                "Enter Seed", wSaveName, 0, 32,
+                [this](bool bRes) -> int {
+                    if (bRes) {
+                        const char* text = PlatformInput.GetText();
+                        if (text && text[0] != '\0') {
+                            this->seedEdit->setValue(text);
+                        }
+                    }
+                    return 0;
+                },
+                IPlatformInput::EKeyboardMode_Default);
+        }
+    }
 }
 
 void CreateWorldScreen::render(int xm, int ym, float a) {
@@ -414,8 +475,6 @@ void CreateWorldScreen::render(int xm, int ym, float a) {
 
         seedEdit->render();
     }
-
-    Screen::render(xm, ym, a);
 
     Screen::render(xm, ym, a);
 }

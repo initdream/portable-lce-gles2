@@ -9,6 +9,7 @@
 #include <chrono>
 #include <compare>
 #include <ctime>
+#include <filesystem>
 #include <format>
 #include <thread>
 #include <utility>
@@ -1090,43 +1091,32 @@ void ConsoleSaveFileSplit::MoveDataBeyond(FileEntry* file,
 
 bool ConsoleSaveFileSplit::GetNumericIdentifierFromName(
     const std::string& fileName, unsigned int* idOut) {
-    // Determine whether it is one of our region file names if the file
-    // extension is ".mbr"
     if (fileName.length() < 4) return false;
-    std::string extension = fileName.substr(fileName.length() - 4, 4);
-    if (extension != std::string(".mcr")) return false;
 
-    unsigned int id = 0;
-    int x, z;
 
-    const char* cstr = fileName.c_str();
-    const char* body = cstr + 2;
+    if (!fileName.ends_with(".mcr")) return false;
 
-    // If this filename starts with a "r" then assume it is of the format
-    // "r.x.z.mcr" - don't do anything as default value we've set are correct
-    if (cstr[0] != 'r') {
-        // Must be prefixed by "DIM-1r." or "DIM1/r."
-        body = cstr + 7;
-        // Differentiate between these 2 options
-        if (cstr[3] == '-') {
-            // "DIM-1r."
-            id = 0x00010000;
-        } else {
-            // "DIM/1r."
-            id = 0x00020000;
-        }
+    unsigned int dimPrefix = 0;
+    const char* scanPos = fileName.c_str();
+
+    if (fileName.starts_with("DIM-1/")) {
+        dimPrefix = 1 << 16;
+        scanPos = fileName.c_str() + 6;  // Move past "DIM-1/"
+    } else if (fileName.starts_with("DIM1/")) {
+        dimPrefix = 2 << 16;
+        scanPos = fileName.c_str() + 5;  // Move past "DIM1/"
     }
-    // Get x/z coords
-    sscanf(body, "%d.%d.mcr", &x, &z);
 
-    // Pack full id
-    // 4jcraft added cast to unsigned
-    id |= (((unsigned int)x << 8) & 0x0000ff00);
-    id |= (z & 0x000000ff);
+    int x = 0, z = 0;
+    if (sscanf(scanPos, "r.%d.%d.mcr", &x, &z) == 2) {
+        unsigned int id = dimPrefix;
+        id |= (((unsigned int)(uint8_t)x << 8) & 0x0000ff00);
+        id |= ((unsigned int)(uint8_t)z & 0x000000ff);
+        *idOut = id;
+        return true;
+    }
 
-    *idOut = id;
-
-    return true;
+    return false;
 }
 
 // Convert a numeric file identifier (for region files) back into a normal
@@ -1136,21 +1126,23 @@ std::string ConsoleSaveFileSplit::GetNameFromNumericIdentifier(
     unsigned int idIn) {
     std::string prefix;
 
-    switch (idIn & 0x00ff0000) {
+    switch ((idIn >> 16) & 0xff) {
         case 0:
             prefix = "";
             break;
         case 1:
-            prefix = "DIM-1";
+            prefix = "DIM-1/";  // nether
             break;
         case 2:
-            prefix = "DIM1/";
+            prefix = "DIM1/";  // end
             break;
     }
-    signed char regionX = (idIn >> 8) & 255;
-    signed char regionZ = idIn & 255;
-    std::string region = (prefix + std::string("r.") + toWString(regionX) +
-                          "." + toWString(regionZ) + ".mcr");
+
+    int8_t regionX = (int8_t)((idIn >> 8) & 0xFF);
+    int8_t regionZ = (int8_t)(idIn & 0xFF);
+
+    std::string region = prefix + "r." + std::to_string((int)regionX) + "." +
+    std::to_string((int)regionZ) + ".mcr";
 
     return region;
 }
@@ -1308,8 +1300,148 @@ void ConsoleSaveFileSplit::Flush(bool autosave, bool updateThumbnail) {
             }
         }
 #endif
+        WriteEntriesAsFolderToDisk(m_fileName);
+
+        ReleaseSaveAccess();
+    } else {
+        // We have failed to allocate the memory required to save this file. Now
+        // what?
         ReleaseSaveAccess();
     }
+}
+
+void ConsoleSaveFileSplit::WriteEntriesAsFolderToDisk(
+    const std::string& worldName) {
+    if (worldName.empty()) {
+        Log::info("[WriteEntriesAsFolderToDisk] skip: empty world name\n");
+        return;
+    }
+    if (pvSaveMem == nullptr) return;
+
+    LockSaveAccess();
+
+    File savesDir = Minecraft::getSavesDirectory();
+    File worldDir(savesDir, worldName);
+    if (!worldDir.exists()) worldDir.mkdirs();
+
+    int writtenCount = 0;
+    for (size_t i = 0; i < header.fileTable.size(); ++i) {
+        FileEntry* entry = header.fileTable[i];
+        if (entry == nullptr || entry->isRegionFile()) continue;
+
+        std::string entryName(entry->data.filename);
+        if (entryName.empty()) continue;
+
+        File outFile(worldDir, entryName);
+        std::string outPath = outFile.getPath();
+
+        size_t lastSlash = outPath.find_last_of('/');
+        if (lastSlash != std::string::npos) {
+            File parentDir(outPath.substr(0, lastSlash));
+            if (!parentDir.exists()) parentDir.mkdirs();
+        }
+
+        if (PlatformFilesystem.writeFile(
+                outPath, (const char*)pvSaveMem + entry->data.startOffset,
+                entry->getFileSize())) {
+            ++writtenCount;
+        }
+    }
+
+    int regionsWritten = 0;
+    for (auto it = regionFiles.begin(); it != regionFiles.end(); ++it) {
+        RegionFileReference* region = it->second;
+        if (region == nullptr || region->data == nullptr ||
+            region->fileEntry->data.length == 0)
+            continue;
+
+        std::string regionName =
+            GetNameFromNumericIdentifier(region->fileEntry->data.regionIndex);
+        File outFile(worldDir, regionName);
+        std::string outPath = outFile.getPath();
+
+        size_t lastSlash = outPath.find_last_of('/');
+        if (lastSlash != std::string::npos) {
+            File parentDir(outPath.substr(0, lastSlash));
+            if (!parentDir.exists()) parentDir.mkdirs();
+        }
+
+        if (PlatformFilesystem.writeFile(outPath, region->data,
+                                         region->fileEntry->data.length)) {
+            ++regionsWritten;
+        }
+    }
+
+    Log::info(
+        "[WriteEntriesAsFolderToDisk] wrote %d entries + %d regions to %s\n",
+        writtenCount, regionsWritten, worldDir.getPath().c_str());
+
+    ReleaseSaveAccess();
+}
+
+namespace {
+void _CollectEntriesUnder(
+    const std::filesystem::path& root, const std::filesystem::path& current,
+    std::vector<std::pair<std::string, std::filesystem::path>>& out) {
+    std::error_code ec;
+    for (auto it = std::filesystem::directory_iterator(current, ec);
+         !ec && it != std::filesystem::directory_iterator(); it.increment(ec)) {
+        const auto& p = it->path();
+        std::error_code ec2;
+        if (std::filesystem::is_directory(p, ec2)) {
+            _CollectEntriesUnder(root, p, out);
+        } else if (std::filesystem::is_regular_file(p, ec2)) {
+            std::filesystem::path rel = std::filesystem::relative(p, root, ec2);
+            if (ec2) continue;
+            std::string s = rel.generic_string();
+            if (s == ".DS_Store" || s.find("/.DS_Store") != std::string::npos)
+                continue;
+            out.emplace_back(std::move(s), p);
+        }
+    }
+}
+}  // namespace
+
+int ConsoleSaveFileSplit::ReadEntriesFromFolderOnDisk(
+    const std::string& worldName) {
+    if (worldName.empty()) return 0;
+
+    File worldDir(Minecraft::getSavesDirectory(), worldName);
+    if (!worldDir.exists() || !worldDir.isDirectory()) return 0;
+
+    std::filesystem::path root(worldDir.getPath());
+    std::vector<std::pair<std::string, std::filesystem::path>> files;
+    _CollectEntriesUnder(root, root, files);
+
+    int count = 0;
+    for (auto& [name, fsPath] : files) {
+        std::vector<std::uint8_t> bytes =
+            PlatformFilesystem.readFileToVec(fsPath);
+        if (bytes.empty()) continue;
+
+        unsigned int regionId;
+        if (GetNumericIdentifierFromName(name, &regionId)) {
+            FileEntry* entry = GetRegionFileEntry(regionId);
+            RegionFileReference* ref = regionFiles[regionId];
+
+            if (ref->data) free(ref->data);
+            ref->data = (unsigned char*)malloc(bytes.size());
+            memcpy(ref->data, bytes.data(), bytes.size());
+            ref->fileEntry->data.length = (unsigned int)bytes.size();
+            ref->dirty = false;
+        } else {
+            ConsoleSavePath path(name);
+            FileEntry* entry = createFile(path);
+            if (entry == nullptr) continue;
+
+            setFilePointer(entry, 0, SaveFileSeekOrigin::Begin);
+            unsigned int written = 0;
+            writeFile(entry, bytes.data(), (unsigned int)bytes.size(),
+                      &written);
+        }
+        ++count;
+    }
+    return count;
 }
 
 int ConsoleSaveFileSplit::SaveSaveDataCallback(void* lpParam, bool bRes) {

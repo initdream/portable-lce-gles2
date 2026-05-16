@@ -17,17 +17,17 @@ private:
     FileHeader header;
 
     static const int WRITE_BANDWIDTH_BYTESPERSECOND =
-        1048576;  // Average bytes per second we will cap to when writing region
-                  // files during the tick() method
+    1048576;  // Average bytes per second we will cap to when writing region
+    // files during the tick() method
     static const int WRITE_BANDWIDTH_MEASUREMENT_PERIOD_SECONDS =
-        10;  // Time period over which the bytes per second average is
-             // calculated
+    10;  // Time period over which the bytes per second average is
+    // calculated
     static const int WRITE_TICK_RATE_MS =
-        500;  // Time between attempts to work out which regions we should write
-              // during the tick
+    500;  // Time between attempts to work out which regions we should write
+    // during the tick
     static const int WRITE_MAX_WRITE_PER_TICK =
-        WRITE_BANDWIDTH_BYTESPERSECOND;  // Maximum number of bytes we can add
-                                         // in a single tick
+    WRITE_BANDWIDTH_BYTESPERSECOND;  // Maximum number of bytes we can add
+    // in a single tick
 
     class WriteHistory {
     public:
@@ -144,6 +144,9 @@ public:
     virtual void DebugFlushToFile(void* compressedData = nullptr,
                                   unsigned int compressedDataSize = 0);
 #endif
+    void WriteEntriesAsFolderToDisk(const std::string& worldName);
+    int ReadEntriesFromFolderOnDisk(const std::string& worldName);
+
     virtual unsigned int getSizeOnDisk();
 
     virtual std::string getFilename();

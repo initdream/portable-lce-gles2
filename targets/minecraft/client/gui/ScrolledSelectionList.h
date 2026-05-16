@@ -4,11 +4,13 @@
 #include <format>
 #include <vector>
 
+#include "GuiComponent.h"
+
 class Button;
 class Tesselator;
 class Minecraft;
 
-class ScrolledSelectionList {
+class ScrolledSelectionList : public GuiComponent {
 private:
     static const int NO_DRAG = -1;
     static const int DRAG_OUTSIDE = -2;
@@ -70,7 +72,9 @@ private:
 public:
     void buttonClicked(Button* button);
     void render(int xm, int ym, float a);
+    bool mouseClicked(int x, int y, int button);
 
 private:
     void renderHoleBackground(int y0, int y1, int a0, int a1);
+    int64_t _currentTimeMs();
 };

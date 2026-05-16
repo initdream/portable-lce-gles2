@@ -292,9 +292,11 @@ void Minecraft::init() {
     // glClearColor(0.2f, 0.2f, 0.2f, 1);
 
     workingDirectory = getWorkingDirectory();
-    levelSource =
-        new McRegionLevelStorageSource(File(workingDirectory, "saves"));
-    //        levelSource = new MemoryLevelStorageSource();
+
+    // 4J FIX: Use the helper method to get the correct absolute path (Saves/ vs
+    // saves/)
+    levelSource = new McRegionLevelStorageSource(getSavesDirectory());
+
     options = new Options(this, workingDirectory);
     skins = new TexturePackRepository(workingDirectory, this);
     skins->addDebugPacks();
@@ -381,10 +383,8 @@ void Minecraft::init() {
     checkGlError("Post startup");
     gui = new Gui(this);
 
-    if (connectToIp != "")  // 4J - was nullptr comparison
-    {
-        //        setScreen(new ConnectScreen(this, connectToIp,
-        //        connectToPort));		// 4J TODO - put back in
+    if (connectToIp != "") {
+        // connect logic here if implemented
     } else {
         setScreen(new TitleScreen());
     }
@@ -394,8 +394,8 @@ void Minecraft::init() {
 }
 
 void Minecraft::renderLoadingScreen() {
-    // 4J Unused
-    // testing stuff on vita just now
+// 4J Unused
+// testing stuff on vita just now
 #if defined(ENABLE_JAVA_GUIS)
     ScreenSizeCalculator ssc(options, width, height);
 
@@ -474,7 +474,8 @@ File Minecraft::getWorkingDirectory(const std::string& applicationName) {
 #endif
 
     if (homedir != nullptr) {
-        File workingDirectory(std::string(homedir), '.' + applicationName + '/');
+        File workingDirectory(std::string(homedir),
+                              '.' + applicationName + '/');
 
         if (!workingDirectory.exists()) {
             if (!workingDirectory.mkdirs()) {
@@ -485,9 +486,20 @@ File Minecraft::getWorkingDirectory(const std::string& applicationName) {
 
         return workingDirectory;
     } else {
-        Log::info("Could not locate user's home directory. This platform is likely missing an implementation of Minecraft::getWorkingDirectory.\n");
+        Log::info(
+            "Could not locate user's home directory. This platform is likely "
+            "missing an implementation of Minecraft::getWorkingDirectory.\n");
         assert(0);
     }
+}
+
+File Minecraft::getSavesDirectory() {
+    File wd = getWorkingDirectory();
+    File savesDir(wd, "Saves");
+    if (!savesDir.exists()) {
+        savesDir.mkdirs();
+    }
+    return savesDir;
 }
 
 LevelStorageSource* Minecraft::getLevelSource() { return levelSource; }
@@ -501,10 +513,10 @@ void Minecraft::setScreen(Screen* screen) {
 
     // 4J Gordon: Do not force a stats save here
     /*if (dynamic_cast<TitleScreen *>(screen)!=nullptr)
-    {
-    stats->forceSend();
-    }
-    stats->forceSave();*/
+     *   {
+     *   stats->forceSend();
+}
+stats->forceSave();*/
 
     if (screen == nullptr && level == nullptr) {
         screen = new TitleScreen();
@@ -544,9 +556,9 @@ void Minecraft::setScreen(Screen* screen) {
         //        grabMouse();	// 4J - removed
     }
 
-    // 4J-PB - if a screen has been set, go into menu mode
-    // it's possible that player doesn't exist here yet
-    // 4jcraft: reuse this for the java GUI
+// 4J-PB - if a screen has been set, go into menu mode
+// it's possible that player doesn't exist here yet
+// 4jcraft: reuse this for the java GUI
 #if defined(ENABLE_JAVA_GUIS)
     if (screen != nullptr && player != nullptr) {
         if (player && player->GetXboxPad() != -1) {
@@ -567,7 +579,7 @@ void Minecraft::checkGlError(const std::string& string) {
 void Minecraft::destroy() {
     // 4J Gordon: Do not force a stats save here
     /*stats->forceSend();
-    stats->forceSave();*/
+     *   stats->forceSave();*/
 
     // 4J - all try/catch/finally things in here removed
     //    try {
@@ -894,9 +906,9 @@ std::shared_ptr<MultiplayerLocalPlayer> Minecraft::createExtraLocalPlayer(
         if (levelpassedin == nullptr)
             level->addEntity(
                 localplayers[idx]);  // Don't add if we're passing the level in,
-                                     // we only do this from the client
-                                     // connection & we'll be handling adding it
-                                     // ourselves
+        // we only do this from the client
+        // connection & we'll be handling adding it
+        // ourselves
 
         localplayers[idx]->SetXboxPad(iPad);
 
@@ -1056,13 +1068,13 @@ void Minecraft::run_middle() {
                 // 4J-PB - AUTOSAVE TIMER - if the player is the host
                 if (level != nullptr && NetworkService.IsHost()) {
                     /*if(!bAutosaveTimerSet)
-                    {
-                    // set the timer
-                    bAutosaveTimerSet=true;
-
-                    gameServices().setAutosaveTimerTime();
-                    }
-                    else*/
+                     *                   {
+                     *                   // set the timer
+                     *                   bAutosaveTimerSet=true;
+                     *
+                     *                   gameServices().setAutosaveTimerTime();
+                }
+                else*/
                     {
                         // if the pause menu is up for the primary player, don't
                         // autosave If saving isn't disabled, and the main
@@ -1109,19 +1121,24 @@ void Minecraft::run_middle() {
                                         gameServices().setAction(
                                             PlatformInput.GetPrimaryPad(),
                                             eAppAction_AutosaveSaveGame);
-                                        // gameServices().setAutosaveTimerTime();
+// gameServices().setAutosaveTimerTime();
 #if !defined(_CONTENT_PACKAGE)
                                         {
                                             // print the time
-                                            auto now = std::chrono::system_clock::now();
-                                            auto dp  = std::chrono::floor<std::chrono::days>(now);
-                                            std::chrono::hh_mm_ss hms{std::chrono::floor<std::chrono::seconds>(now - dp)};
+                                            auto now = std::chrono::
+                                                system_clock::now();
+                                            auto dp = std::chrono::floor<
+                                                std::chrono::days>(now);
+                                            std::chrono::hh_mm_ss hms{
+                                                std::chrono::floor<
+                                                    std::chrono::seconds>(now -
+                                                                          dp)};
 
-                                            Log::info("%02d:%02d:%02d\n",
-                                                    (int)hms.hours().count(),
-                                                    (int)hms.minutes().count(),
-                                                    (int)hms.seconds().count());
-
+                                            Log::info(
+                                                "%02d:%02d:%02d\n",
+                                                (int)hms.hours().count(),
+                                                (int)hms.minutes().count(),
+                                                (int)hms.seconds().count());
                                         }
 #endif
                                     } else {
@@ -1689,15 +1706,15 @@ void Minecraft::run_middle() {
                 glFlush();
 
                 /*	4J - removed
-                if (!Display::isActive())
-                {
-                if (fullscreen)
-                {
-                this->toggleFullScreen();
-                }
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                }
-                */
+                 *               if (!Display::isActive())
+                 *               {
+                 *               if (fullscreen)
+                 *               {
+                 *               this->toggleFullScreen();
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
+            */
 
 #if PACKET_ENABLE_STAT_TRACKING
                 Packet::updatePacketStatsPIX();
@@ -1724,8 +1741,8 @@ void Minecraft::run_middle() {
                 achievementPopup->render();
 
                 std::this_thread::yield();  // 4jcraft added now that we have
-                                            // portable thread yield.
-                                            // std::this_thread::sleep_for(
+                // portable thread yield.
+                // std::this_thread::sleep_for(
                 //     std::chrono::milliseconds(0));  // 4J - was
                 //     Thread.yield())
 
@@ -1736,23 +1753,24 @@ void Minecraft::run_middle() {
                 //        checkScreenshot();	// 4J - removed
 
                 /* 4J - removed
-                if (parent != nullptr && !fullscreen)
-                {
-                if (parent.getWidth() != width || parent.getHeight() != height)
-                {
-                width = parent.getWidth();
-                height = parent.getHeight();
-                if (width <= 0) width = 1;
-                if (height <= 0) height = 1;
-
-                resize(width, height);
-                }
-                }
-                */
+                 *               if (parent != nullptr && !fullscreen)
+                 *               {
+                 *               if (parent.getWidth() != width ||
+            parent.getHeight() != height)
+                 *               {
+                 *               width = parent.getWidth();
+                 *               height = parent.getHeight();
+                 *               if (width <= 0) width = 1;
+                 *               if (height <= 0) height = 1;
+                 *
+                 *               resize(width, height);
+            }
+            }
+            */
                 checkGlError("Post render");
                 frames++;
-                // pause = !isClientSide() && screen != nullptr &&
-                // screen->isPauseScreen();
+// pause = !isClientSide() && screen != nullptr &&
+// screen->isPauseScreen();
 #if defined(ENABLE_JAVA_GUIS)
                 pause = NetworkService.IsLocalGame() &&
                         NetworkService.GetPlayerCount() == 1 &&
@@ -1772,27 +1790,27 @@ void Minecraft::run_middle() {
                 }
 #endif
                 /*
-                } catch (LevelConflictException e) {
-                this.level = null;
-                setLevel(null);
-                setScreen(new LevelConflictScreen());
-                } catch (OutOfMemoryError e) {
-                emergencySave();
-                setScreen(new OutOfMemoryScreen());
-                System.gc();
-                }
-                */
-            }
-            /*
-            } catch (StopGameException e) {
-            } catch (Throwable e) {
+            } catch (LevelConflictException e) {
+            this.level = null;
+            setLevel(null);
+            setScreen(new LevelConflictScreen());
+            } catch (OutOfMemoryError e) {
             emergencySave();
-            e.printStackTrace();
-            crash(new CrashReport("Unexpected error", e));
-            } finally {
-            destroy();
+            setScreen(new OutOfMemoryScreen());
+            System.gc();
             }
             */
+            }
+            /*
+        } catch (StopGameException e) {
+        } catch (Throwable e) {
+        emergencySave();
+        e.printStackTrace();
+        crash(new CrashReport("Unexpected error", e));
+        } finally {
+        destroy();
+        }
+        */
         }
     }  // lock_guard scope
 }
@@ -1948,27 +1966,29 @@ void Minecraft::resize(int width, int height) {
         screen->init(
             this, screenWidth,
             screenHeight);  // 4jcraft: uncommented to immediately scale on
-                            // resize now that we have correct ssc usage
+        // resize now that we have correct ssc usage
     }
 }
 
 void Minecraft::verify() {
     /* 4J - TODO
-    new Thread() {
-    public void run() {
-    try {
-    HttpURLConnection huc = (HttpURLConnection) new
-    URL("https://login.minecraft.net/session?name=" + user.name + "&session=" +
-    user.sessionId).openConnection(); huc.connect(); if (huc.getResponseCode()
-    == 400) { warezTime = System.currentTimeMillis();
-    }
-    huc.disconnect();
-    } catch (Exception e) {
-    e.printStackTrace();
-    }
-    }
-    }.start();
-    */
+     *   new Thread() {
+     *   public void run() {
+     *   try {
+     *   HttpURLConnection huc = (HttpURLConnection) new
+     *   URL("https://login.minecraft.net/session?name=" + user.name +
+"&session=" +
+     *   user.sessionId).openConnection(); huc.connect(); if
+(huc.getResponseCode()
+     *   == 400) { warezTime = System.currentTimeMillis();
+}
+huc.disconnect();
+} catch (Exception e) {
+e.printStackTrace();
+}
+}
+}.start();
+*/
 }
 
 void Minecraft::levelTickUpdateFunc(void* pParam) {
@@ -2174,7 +2194,7 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures) {
                     gameMode->useItem(player, level, itemInstance, true);
 
                 switch (itemInstance->getItem()->id) {
-                        // food
+                    // food
                     case Item::potatoBaked_Id:
                     case Item::potato_Id:
                     case Item::pumpkinPie_Id:
@@ -2462,14 +2482,14 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures) {
                             case Tile::cake_Id:
                                 if (player->abilities
                                         .instabuild)  // if in creative mode, we
-                                                      // will mine
+                                // will mine
                                 {
                                     *piAction = IDS_TOOLTIPS_MINE;
                                 } else {
                                     if (player->getFoodData()
                                             ->needsFood())  // 4J-JEV: Changed
-                                                            // from healthto
-                                                            // hunger.
+                                    // from healthto
+                                    // hunger.
                                     {
                                         *piAction = IDS_TOOLTIPS_EAT;
                                         *piUse = IDS_TOOLTIPS_EAT;
@@ -2684,12 +2704,12 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures) {
                                         break;
 
                                     case Item::bowl_Id:
-                                    case Item::
-                                        bucket_empty_Id:  // You can milk a
-                                                          // mooshroom with
-                                                          // either a bowl
-                                                          // (mushroom soup) or
-                                                          // a bucket (milk)!
+                                    case Item::bucket_empty_Id:  // You can milk
+                                                                 // a
+                                        // mooshroom with
+                                        // either a bowl
+                                        // (mushroom soup) or
+                                        // a bucket (milk)!
                                         *piUse = IDS_TOOLTIPS_MILK;
                                         break;
                                     case Item::shears_Id: {
@@ -2719,11 +2739,10 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures) {
 
                             case eTYPE_MINECART_RIDEABLE:
                                 *piAction = IDS_TOOLTIPS_MINE;
-                                *piUse =
-                                    IDS_TOOLTIPS_RIDE;  // are we in the
-                                                        // minecart already? -
-                                                        // 4J-JEV: Doesn't
-                                                        // matter anymore.
+                                *piUse = IDS_TOOLTIPS_RIDE;  // are we in the
+                                // minecart already? -
+                                // 4J-JEV: Doesn't
+                                // matter anymore.
                                 break;
 
                             case eTYPE_MINECART_FURNACE:
@@ -3009,14 +3028,14 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures) {
 
                                 if (!TargetPlayer
                                          ->hasInvisiblePrivilege())  // This
-                                                                     // means
-                                                                     // they are
-                                                                     // invisible,
-                                                                     // not just
-                                                                     // that
-                                                                     // they
-                                                                     // have the
-                                                                     // privilege
+                                // means
+                                // they are
+                                // invisible,
+                                // not just
+                                // that
+                                // they
+                                // have the
+                                // privilege
                                 {
                                     if (gameServices().getGameHostOption(
                                             eGameHostOption_PvP) &&
@@ -3267,13 +3286,14 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures) {
         // Java game does it, however we may find that the way we had it
         // previously is more fun to play.
         /*
-        if ((PlatformInput.GetValue(iPad, MINECRAFT_ACTION_USE,true)>0) &&
-        gameMode->isInputAllowed(MINECRAFT_ACTION_USE) )
-        {
-        handleMouseClick(1);
-        lastClickTick = ticks;
-        }
-        */
+         *       if ((PlatformInput.GetValue(iPad, MINECRAFT_ACTION_USE,true)>0)
+&&
+         *       gameMode->isInputAllowed(MINECRAFT_ACTION_USE) )
+         *       {
+         *       handleMouseClick(1);
+         *       lastClickTick = ticks;
+}
+*/
         if (player->isUsingItem()) {
             if (!PlatformInput.ButtonDown(iPad, MINECRAFT_ACTION_USE))
                 gameMode->releaseUsingItem(player);
@@ -3573,7 +3593,7 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures) {
         for (unsigned int i = 0; i < levels.size(); ++i) {
             if (player->level != levels[i])
                 continue;  // Don't tick if the current player isn't in this
-                           // level
+            // level
 
             // 4J - this doesn't fully tick the animateTick here, but does
             // register this player's position. The actual work is now done in
@@ -3586,7 +3606,7 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures) {
 
             if (levelsTickedFlags & (1 << i))
                 continue;  // Don't tick further if we've already ticked this
-                           // level this frame
+            // level this frame
             levelsTickedFlags |= (1 << i);
 
             if (!pause) levelRenderer->tick();
@@ -3973,7 +3993,7 @@ std::string Minecraft::gatherStats4() {
 void Minecraft::respawnPlayer(int iPad, int dimension, int newEntityId) {
     gameRenderer
         ->DisableUpdateThread();  // 4J - don't do updating whilst we are
-                                  // adjusting the player & localplayer array
+    // adjusting the player & localplayer array
     std::shared_ptr<MultiplayerLocalPlayer> localPlayer = localplayers[iPad];
 
     level->validateSpawn();
@@ -4090,20 +4110,20 @@ void Minecraft::startAndConnectTo(const std::string& name,
     std::string userName = name;
 
     /* 4J - removed window handling things here
-    final Frame frame = new Frame("Minecraft");
-    Canvas canvas = new Canvas();
-    frame.setLayout(new BorderLayout());
-
-    frame.add(canvas, BorderLayout.CENTER);
-
-    // OverlayLayout oll = new OverlayLayout(frame);
-    // oll.addLayoutComponent(canvas, BorderLayout.CENTER);
-    // oll.addLayoutComponent(new JLabel("TEST"), BorderLayout.EAST);
-
-    canvas.setPreferredSize(new Dimension(854, 480));
-    frame.pack();
-    frame.setLocationRelativeTo(null);
-    */
+     *   final Frame frame = new Frame("Minecraft");
+     *   Canvas canvas = new Canvas();
+     *   frame.setLayout(new BorderLayout());
+     *
+     *   frame.add(canvas, BorderLayout.CENTER);
+     *
+     *   // OverlayLayout oll = new OverlayLayout(frame);
+     *   // oll.addLayoutComponent(canvas, BorderLayout.CENTER);
+     *   // oll.addLayoutComponent(new JLabel("TEST"), BorderLayout.EAST);
+     *
+     *   canvas.setPreferredSize(new Dimension(854, 480));
+     *   frame.pack();
+     *   frame.setLocationRelativeTo(null);
+     */
 
     Minecraft* minecraft;
     // 4J - was new Minecraft(frame, canvas, nullptr, 854, 480, fullScreen);
@@ -4112,25 +4132,25 @@ void Minecraft::startAndConnectTo(const std::string& name,
                               leaderboard);
 
     /* - 4J - removed
-    {
-    @Override
-    public void onCrash(CrashReport crashReport) {
-    frame.removeAll();
-    frame.add(new CrashInfoPanel(crashReport), BorderLayout.CENTER);
-    frame.validate();
-    }
-    }; */
+     *   {
+     *   @Override
+     *   public void onCrash(CrashReport crashReport) {
+     *   frame.removeAll();
+     *   frame.add(new CrashInfoPanel(crashReport), BorderLayout.CENTER);
+     *   frame.validate();
+                                  }
+                                  }; */
 
     /* 4J - removed
-    final Thread thread = new Thread(minecraft, "Minecraft main thread");
-    thread.setPriority(Thread.MAX_PRIORITY);
-    */
+     *   final Thread thread = new Thread(minecraft, "Minecraft main thread");
+     *   thread.setPriority(Thread.MAX_PRIORITY);
+     */
     minecraft->serverDomain = "www.minecraft.net";
 
     {
         if (userName != "" &&
             sid != "")  // 4J - username & side were compared with nullptr
-                        // rather than empty strings
+        // rather than empty strings
         {
             minecraft->user = new User(userName, sid);
         } else {
@@ -4145,27 +4165,27 @@ void Minecraft::startAndConnectTo(const std::string& name,
     // }
 
     /* 4J - TODO
-    if (url != nullptr)
-    {
-    String[] tokens = url.split(":");
-    minecraft.connectTo(tokens[0], Integer.parseInt(tokens[1]));
-    }
-    */
+     *   if (url != nullptr)
+     *   {
+     *   String[] tokens = url.split(":");
+     *   minecraft.connectTo(tokens[0], Integer.parseInt(tokens[1]));
+                                  }
+                                  */
 
     /* 4J - removed
-    frame.setVisible(true);
-    frame.addWindowListener(new WindowAdapter() {
-    public void windowClosing(WindowEvent arg0) {
-    minecraft.stop();
-    try {
-    thread.join();
-    } catch (InterruptedException e) {
-    e.printStackTrace();
-    }
-    System.exit(0);
-    }
-    });
-    */
+     *   frame.setVisible(true);
+     *   frame.addWindowListener(new WindowAdapter() {
+     *   public void windowClosing(WindowEvent arg0) {
+     *   minecraft.stop();
+     *   try {
+     *   thread.join();
+                                  } catch (InterruptedException e) {
+                                  e.printStackTrace();
+                                  }
+                                  System.exit(0);
+                                  }
+                                  });
+                                  */
     // 4J - TODO - consider whether we need to actually create a thread here
     minecraft->run();
 }
@@ -4205,14 +4225,14 @@ void Minecraft::main(IPlatformLeaderboard& leaderboard) {
 
     // 4J-PB - Can't call this for the first 5 seconds of a game - MS rule
     {
-        name =
-            "Player" + toWString<int64_t>(System::currentTimeMillis() % 1000);
-        sessionId = "-";
+        name = "Player1";
+        //"Player" + toWString<int64_t>(System::currentTimeMillis() % 1000);
+        // sessionId = "-";
         /* 4J - TODO - get a session ID from somewhere?
-        if (args.size() > 0) name = args[0];
-        sessionId = "-";
-        if (args.size() > 1) sessionId = args[1];
-        */
+         *       if (args.size() > 0) name = args[0];
+         *       sessionId = "-";
+         *       if (args.size() > 1) sessionId = args[1];
+         */
     }
 
     // Common for all platforms
@@ -4267,142 +4287,143 @@ void Minecraft::delayTextureReload() { reloadTextures = true; }
 
 int64_t Minecraft::currentTimeMillis() {
     return System::currentTimeMillis();  //(Sys.getTime() * 1000) /
-                                         // Sys.getTimerResolution();
+    // Sys.getTimerResolution();
 }
 
 /*void Minecraft::handleMouseDown(int button, bool down)
-{
-if (gameMode->instaBuild) return;
-if (!down) missTime = 0;
-if (button == 0 && missTime > 0) return;
+ { *
+ if (gameMode->instaBuild) return;
+ if (!down) missTime = 0;
+ if (button == 0 && missTime > 0) return;
 
-if (down && hitResult != nullptr && hitResult->type == HitResult::TILE && button
-== 0)
-{
-int x = hitResult->x;
-int y = hitResult->y;
-int z = hitResult->z;
-gameMode->continueDestroyBlock(x, y, z, hitResult->f);
-particleEngine->crack(x, y, z, hitResult->f);
-}
-else
-{
-gameMode->stopDestroyBlock();
-}
-}
+ if (down && hitResult != nullptr && hitResult->type == HitResult::TILE &&
+ button
+     == 0)
+     {
+     int x = hitResult->x;
+ int y = hitResult->y;
+ int z = hitResult->z;
+ gameMode->continueDestroyBlock(x, y, z, hitResult->f);
+ particleEngine->crack(x, y, z, hitResult->f);
+ }
+ else
+ {
+ gameMode->stopDestroyBlock();
+ }
+ }
 
-void Minecraft::handleMouseClick(int button)
-{
-if (button == 0 && missTime > 0) return;
-if (button == 0)
-{
-Log::info("handleMouseClick - Player %d is
-swinging\n",player->GetXboxPad()); player->swing();
-}
+ void Minecraft::handleMouseClick(int button)
+ {
+ if (button == 0 && missTime > 0) return;
+ if (button == 0)
+ {
+ Log::info("handleMouseClick - Player %d is
+ swinging\n",player->GetXboxPad()); player->swing();
+ }
 
-bool mayUse = true;
+ bool mayUse = true;
 
-//	* if (button == 1) { ItemInstance item =
-//	* player.inventory.getSelected(); if (item != null) { if
-//	* (gameMode.useItem(player, item)) {
-//	* gameRenderer.itemInHandRenderer.itemUsed(); return; } } }
+ //	* if (button == 1) { ItemInstance item =
+ //	* player.inventory.getSelected(); if (item != null) { if
+ //	* (gameMode.useItem(player, item)) {
+ //	* gameRenderer.itemInHandRenderer.itemUsed(); return; } } }
 
-// 4J-PB - Adding a special case in here for sleeping in a bed in a multiplayer
-game - we need to wake up, and we don't have the inbedchatscreen with a button
+ // 4J-PB - Adding a special case in here for sleeping in a bed in a multiplayer
+ game - we need to wake up, and we don't have the inbedchatscreen with a button
 
-if(button==1 && (player->isSleeping() && level != nullptr &&
-level->isClientSide))
-{
-shared_ptr<MultiplayerLocalPlayer> mplp =
-std::dynamic_pointer_cast<MultiplayerLocalPlayer>( player );
+ if(button==1 && (player->isSleeping() && level != nullptr &&
+     level->isClientSide))
+     {
+     shared_ptr<MultiplayerLocalPlayer> mplp =
+     std::dynamic_pointer_cast<MultiplayerLocalPlayer>( player );
 
-if(mplp) mplp->StopSleeping();
+ if(mplp) mplp->StopSleeping();
 
-// 4J - TODO
-//if (minecraft.player instanceof MultiplayerLocalPlayer)
-//{
-//    ClientConnection connection = ((MultiplayerLocalPlayer)
-minecraft.player).connection;
-//    connection.send(new PlayerCommandPacket(minecraft.player,
-PlayerCommandPacket.STOP_SLEEPING));
-//}
-}
+ // 4J - TODO
+ //if (minecraft.player instanceof MultiplayerLocalPlayer)
+ //{
+ //    ClientConnection connection = ((MultiplayerLocalPlayer)
+ minecraft.player).connection;
+ //    connection.send(new PlayerCommandPacket(minecraft.player,
+ PlayerCommandPacket.STOP_SLEEPING));
+ //}
+ }
 
-if (hitResult == nullptr)
-{
-if (button == 0 && !(dynamic_cast<CreativeMode *>(gameMode) != nullptr))
-missTime = 10;
-}
-else if (hitResult->type == HitResult::ENTITY)
-{
-if (button == 0)
-{
-gameMode->attack(player, hitResult->entity);
-}
-if (button == 1)
-{
-gameMode->interact(player, hitResult->entity);
-}
-}
-else if (hitResult->type == HitResult::TILE)
-{
-int x = hitResult->x;
-int y = hitResult->y;
-int z = hitResult->z;
-int face = hitResult->f;
+ if (hitResult == nullptr)
+ {
+ if (button == 0 && !(dynamic_cast<CreativeMode *>(gameMode) != nullptr))
+     missTime = 10;
+ }
+ else if (hitResult->type == HitResult::ENTITY)
+ {
+ if (button == 0)
+ {
+ gameMode->attack(player, hitResult->entity);
+ }
+ if (button == 1)
+ {
+ gameMode->interact(player, hitResult->entity);
+ }
+ }
+ else if (hitResult->type == HitResult::TILE)
+ {
+ int x = hitResult->x;
+ int y = hitResult->y;
+ int z = hitResult->z;
+ int face = hitResult->f;
 
-//	* if (button != 0) { if (hitResult.f == 0) y--; if (hitResult.f ==
-//	* 1) y++; if (hitResult.f == 2) z--; if (hitResult.f == 3) z++; if
-//	* (hitResult.f == 4) x--; if (hitResult.f == 5) x++; }
+ //	* if (button != 0) { if (hitResult.f == 0) y--; if (hitResult.f ==
+ //	* 1) y++; if (hitResult.f == 2) z--; if (hitResult.f == 3) z++; if
+ //	* (hitResult.f == 4) x--; if (hitResult.f == 5) x++; }
 
-// if (isClientSide())
-// {
-// return;
-// }
+ // if (isClientSide())
+ // {
+ // return;
+ // }
 
-if (button == 0)
-{
-gameMode->startDestroyBlock(x, y, z, hitResult->f);
-}
-else
-{
-shared_ptr<ItemInstance> item = player->inventory->getSelected();
-int oldCount = item != nullptr ? item->count : 0;
-if (gameMode->useItemOn(player, level, item, x, y, z, face))
-{
-mayUse = false;
-Log::info("Player %d is swinging\n",player->GetXboxPad());
-player->swing();
-}
-if (item == nullptr)
-{
-return;
-}
+ if (button == 0)
+ {
+ gameMode->startDestroyBlock(x, y, z, hitResult->f);
+ }
+ else
+ {
+ shared_ptr<ItemInstance> item = player->inventory->getSelected();
+ int oldCount = item != nullptr ? item->count : 0;
+ if (gameMode->useItemOn(player, level, item, x, y, z, face))
+ {
+ mayUse = false;
+ Log::info("Player %d is swinging\n",player->GetXboxPad());
+ player->swing();
+ }
+ if (item == nullptr)
+ {
+ return;
+ }
 
-if (item->count == 0)
-{
-player->inventory->items[player->inventory->selected] = nullptr;
-}
-else if (item->count != oldCount)
-{
-gameRenderer->itemInHandRenderer->itemPlaced();
-}
-}
-}
+ if (item->count == 0)
+ {
+ player->inventory->items[player->inventory->selected] = nullptr;
+ }
+ else if (item->count != oldCount)
+ {
+ gameRenderer->itemInHandRenderer->itemPlaced();
+ }
+ }
+ }
 
-if (mayUse && button == 1)
-{
-shared_ptr<ItemInstance> item = player->inventory->getSelected();
-if (item != nullptr)
-{
-if (gameMode->useItem(player, level, item))
-{
-gameRenderer->itemInHandRenderer->itemUsed();
-}
-}
-}
-}
-*/
+ if (mayUse && button == 1)
+ {
+ shared_ptr<ItemInstance> item = player->inventory->getSelected();
+ if (item != nullptr)
+ {
+ if (gameMode->useItem(player, level, item))
+ {
+ gameRenderer->itemInHandRenderer->itemUsed();
+ }
+ }
+ }
+ }
+ */
 
 // 4J-PB
 Screen* Minecraft::getScreen() { return screen; }
@@ -4411,13 +4432,13 @@ bool Minecraft::isTutorial() {
     return m_inFullTutorialBits > 0;
 
     /*if( gameMode != nullptr && gameMode->isTutorial() )
-    {
-    return true;
-    }
-    else
-    {
-    return false;
-    }*/
+     *   {
+     *   return true;
+}
+else
+{
+return false;
+}*/
 }
 
 void Minecraft::playerStartedTutorial(int iPad) {

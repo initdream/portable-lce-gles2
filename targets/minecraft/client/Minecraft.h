@@ -103,7 +103,7 @@ private:
 
 public:
     Level* oldLevel;  // 4J Stu added to keep a handle on an old level so we can
-                      // delete it
+    // delete it
     // void* m_hPlayerRespawned; // 4J Added so we can wait in menus until it
     // is done (for async in multiplayer)
 public:
@@ -123,7 +123,7 @@ public:
     // 4J Stu - Added these so that we can show a Xui scene while connecting
     bool m_connectionFailed[XUSER_MAX_COUNT];
     DisconnectPacket::eDisconnectReason
-        m_connectionFailedReason[XUSER_MAX_COUNT];
+    m_connectionFailedReason[XUSER_MAX_COUNT];
     ClientConnection* m_pendingLocalConnections[XUSER_MAX_COUNT];
 
     bool addLocalPlayer(
@@ -133,37 +133,37 @@ public:
                                 DisconnectPacket::eDisconnectReason reason) {
         m_connectionFailed[idx] = true;
         m_connectionFailedReason[idx] = reason;
-    }
+                                }
 
-    std::shared_ptr<MultiplayerLocalPlayer> createExtraLocalPlayer(
-        int idx, const std::string& name, int pad, int iDimension,
-        ClientConnection* clientConnection = nullptr,
-        MultiPlayerLevel* levelpassedin = nullptr);
-    void createPrimaryLocalPlayer(int iPad);
-    bool setLocalPlayerIdx(int idx);
-    int getLocalPlayerIdx();
-    void removeLocalPlayerIdx(int idx);
-    void storeExtraLocalPlayer(int idx);
-    void updatePlayerViewportAssignments();
-    int unoccupiedQuadrant;  // 4J - added
+                                std::shared_ptr<MultiplayerLocalPlayer> createExtraLocalPlayer(
+                                    int idx, const std::string& name, int pad, int iDimension,
+                                    ClientConnection* clientConnection = nullptr,
+                                    MultiPlayerLevel* levelpassedin = nullptr);
+                                void createPrimaryLocalPlayer(int iPad);
+                                bool setLocalPlayerIdx(int idx);
+                                int getLocalPlayerIdx();
+                                void removeLocalPlayerIdx(int idx);
+                                void storeExtraLocalPlayer(int idx);
+                                void updatePlayerViewportAssignments();
+                                int unoccupiedQuadrant;  // 4J - added
 
-    std::shared_ptr<LivingEntity> cameraTargetPlayer;
-    std::shared_ptr<LivingEntity> crosshairPickMob;
-    ParticleEngine* particleEngine;
-    User* user;
-    std::string serverDomain;
-    Canvas* parent;
-    bool appletMode;
+                                std::shared_ptr<LivingEntity> cameraTargetPlayer;
+                                std::shared_ptr<LivingEntity> crosshairPickMob;
+                                ParticleEngine* particleEngine;
+                                User* user;
+                                std::string serverDomain;
+                                Canvas* parent;
+                                bool appletMode;
 
-    // 4J - per player ?
-    volatile bool pause;
-    volatile bool exitingWorldRightNow;
+                                // 4J - per player ?
+                                volatile bool pause;
+                                volatile bool exitingWorldRightNow;
 
-    Textures* textures;
-    Font *font, *altFont;
-    Screen* screen;
-    ProgressRenderer* progressRenderer;
-    GameRenderer* gameRenderer;
+                                Textures* textures;
+                                Font *font, *altFont;
+                                Screen* screen;
+                                ProgressRenderer* progressRenderer;
+                                GameRenderer* gameRenderer;
 
 private:
     BackgroundDownloader* bgLoader;
@@ -241,6 +241,7 @@ private:
 public:
     static File getWorkingDirectory();
     static File getWorkingDirectory(const std::string& applicationName);
+    static File getSavesDirectory();
 
 public:
     LevelStorageSource* getLevelSource();
@@ -391,7 +392,7 @@ public:
     // are waiting for it
     std::vector<std::string> m_pendingTextureRequests;
     std::vector<std::string>
-        m_pendingGeometryRequests;  // additional skin box geometry
+    m_pendingGeometryRequests;  // additional skin box geometry
 
     // 4J Added
     bool addPendingClientTextureRequest(const std::string& textureName);

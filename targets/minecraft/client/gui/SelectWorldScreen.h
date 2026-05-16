@@ -1,10 +1,9 @@
 #pragma once
-#include <format>
 #include <string>
 #include <vector>
 
-#include "Screen.h"
-#include "ScrolledSelectionList.h"
+#include "minecraft/client/gui/Screen.h"
+#include "minecraft/client/gui/ScrolledSelectionList.h"
 
 class LevelSummary;
 class Button;
@@ -60,6 +59,7 @@ public:
 
 protected:
     virtual void buttonClicked(Button* button) override;
+    virtual void mouseClicked(int x, int y, int buttonNum) override;
 
 public:
     void worldSelected(int id);
@@ -74,11 +74,12 @@ public:
         WorldSelectionList(SelectWorldScreen* sws);
 
     protected:
-        virtual int getNumberOfItems();
-        virtual void selectItem(int item, bool doubleClick);
-        virtual bool isSelectedItem(int item);
-        virtual int getMaxPosition();
-        virtual void renderBackground();
-        virtual void renderItem(int i, int x, int y, int h, Tesselator* t);
+        virtual int getNumberOfItems() override;
+        virtual void selectItem(int item, bool doubleClick) override;
+        virtual bool isSelectedItem(int item) override;
+        virtual int getMaxPosition() override;
+        virtual void renderBackground() override;
+        virtual void renderItem(int i, int x, int y, int h,
+                                Tesselator* t) override;
     };
 };

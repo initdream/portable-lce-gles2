@@ -87,6 +87,9 @@ class ConsoleInputSource;
 
 #define DEBUG_SERVER_DONT_SPAWN_MOBS 0
 
+
+std::string g_pendingWorldName = "";
+
 // 4J Added
 MinecraftServer* MinecraftServer::server = nullptr;
 bool MinecraftServer::setTimeAtEndOfTick = false;
@@ -406,9 +409,9 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
             initData->saveData->fileSize, false, initData->savePlatform);
         ConsoleSaveFile* pSave = new ConsoleSaveFileSplit(&oldFormatSave);
 
-        // ConsoleSaveFile* pSave = new ConsoleSaveFileSplit(
-        // initData->saveData->saveName, initData->saveData->data,
-        // initData->saveData->fileSize, false, initData->savePlatform );
+// ConsoleSaveFile* pSave = new ConsoleSaveFileSplit(
+// initData->saveData->saveName, initData->saveData->data,
+// initData->saveData->fileSize, false, initData->savePlatform );
 #else
         ConsoleSaveFile* pSave = new ConsoleSaveFileOriginal(
             initData->saveData->saveName, initData->saveData->data,
@@ -416,12 +419,12 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
 #endif
         if (pSave->isSaveEndianDifferent()) levelChunksNeedConverted = true;
         pSave->ConvertToLocalPlatform();  // check if we need to convert this
-                                          // file from PS3->PS4
+        // file from PS3->PS4
 
         storage = std::shared_ptr<McRegionLevelStorage>(
             new McRegionLevelStorage(pSave, File("."), name, true));
     } else {
-        // We are loading a save from the storage manager
+// We are loading a save from the storage manager
 #if defined(SPLIT_SAVES)
         bool bLevelGenBaseSave = false;
         LevelGenerationOptions* levelGen =
@@ -436,8 +439,10 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
             ConsoleSaveFileOriginal oldFormatSave("");
             newFormatSave = new ConsoleSaveFileSplit(&oldFormatSave);
         } else {
-            newFormatSave = new ConsoleSaveFileSplit("");
+            newFormatSave = new ConsoleSaveFileSplit(name);
         }
+
+        newFormatSave->ReadEntriesFromFolderOnDisk(name);
 
         storage = std::shared_ptr<McRegionLevelStorage>(
             new McRegionLevelStorage(newFormatSave, File("."), name, true));
@@ -475,9 +480,10 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
                 levels[i]->getLevelData()->setHasBeenInCreative(
                     mapOptions->isFromDLC());
             }
-        } else
+        } else {
             levels[i] = new DerivedServerLevel(this, storage, name, dimension,
                                                levelSettings, levels[0]);
+        }
         //        levels[i]->addListener(new ServerLevelListener(this,
         //        levels[i]));		// 4J - have moved this to the
         //        ServerLevel ctor so that it is set up in time for the first
@@ -531,7 +537,8 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
     // deep with some sand tower falling, so increased the stacj to 256K from
     // 128k on other platforms (was already set to that on PS3 and Orbis)
 
-    m_postUpdateThread = new C4JThread(runPostUpdate, this, "Post processing", 1024 * 1024); //1MB stack size
+    m_postUpdateThread = new C4JThread(runPostUpdate, this, "Post processing",
+                                       256 * 1024);  // 1MB stack size
 
     m_postUpdateTerminate = false;
     m_postUpdateThread->setPriority(C4JThread::ThreadPriority::AboveNormal);
@@ -539,8 +546,9 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
 
     int64_t startTime = System::currentTimeMillis();
 
-    // 4J Stu - Added this to temporarily make starting games on vita/aarch64 faster
-    int r = 32;
+    // 4J Stu - Added this to temporarily make starting games on vita/aarch64
+    // faster
+    int r = 196;
 
     //  4J JEV: load gameRules.
     ConsoleSavePath filepath(GAME_RULE_SAVENAME);
@@ -568,8 +576,8 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
         levels[0]->getLevelData()->getXZSizeOld()) {
         if (!gameServices()
                  .getGameNewWorldSizeUseMoat())  // check the moat settings to
-                                                 // see if we should be
-                                                 // overwriting the edge tiles
+        // see if we should be
+        // overwriting the edge tiles
         {
             overwriteBordersForNewWorldSize(levels[0]);
         }
@@ -595,6 +603,7 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
 
             int twoRPlusOne = r * 2 + 1;
             int total = twoRPlusOne * twoRPlusOne;
+            int count = 0;
             for (int x = -r; x <= r && running; x += 16) {
                 for (int z = -r; z <= r && running; z += 16) {
                     if (s_bServerHalted || !NetworkService.IsInSession()) {
@@ -613,15 +622,14 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
                         int pos = (x + r) * twoRPlusOne + (z + 1);
                         //                        setProgress("Preparing spawn
                         //                        area", (pos) * 100 / total);
-                        mcprogress->progressStagePercentage((pos + r) * 100 /
-                                                            total);
+                        mcprogress->progressStagePercentage((count++) * 100 /
+                                                            (total / 256));
                         //                        lastTime = now;
                     }
-                    static int count = 0;
                     level->cache->create((spawnPos->x + x) >> 4,
                                          (spawnPos->z + z) >> 4,
                                          true);  // 4J - added parameter to
-                                                 // disable postprocessing here
+                    // disable postprocessing here
 
                     //                    while (level->updateLights() &&
                     //                    running)
@@ -643,6 +651,31 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
             delete spawnPos;
         }
     }
+
+    for (auto* level : levels) {
+        if (level == nullptr) continue;
+
+        CompoundTag* playerTag =
+            level->getLevelStorage()->getPlayerIO()->loadPlayerDataTag(
+                INVALID_XUID);
+        if (playerTag != nullptr && playerTag->contains("Pos")) {
+            ListTag<DoubleTag>* posList =
+                (ListTag<DoubleTag>*)playerTag->getList("Pos");
+            int px = (int)posList->get(0)->data;
+            int pz = (int)posList->get(2)->data;
+
+            Log::info("[loadLevel] Prioritizing chunks at player pos: %d, %d\n",
+                      px, pz);
+
+            for (int x = -1; x <= 1; ++x) {
+                for (int z = -1; z <= 1; ++z) {
+                    level->cache->create((px >> 4) + x, (pz >> 4) + z, true);
+                }
+            }
+            delete playerTag;
+        }
+    }
+
     //	printf("Main thread complete at %dms\n",System::currentTimeMillis() -
     // startTime);
 
@@ -684,18 +717,6 @@ bool MinecraftServer::loadLevel(LevelStorageSource* storageSource,
 
     //	printf("Lighting complete at %dms\n",System::currentTimeMillis() -
     // startTime);
-
-    if (s_bServerHalted || !NetworkService.IsInSession()) return false;
-
-    if (levels[1]->isNew) {
-        levels[1]->save(true, mcprogress);
-    }
-
-    if (s_bServerHalted || !NetworkService.IsInSession()) return false;
-
-    if (levels[2]->isNew) {
-        levels[2]->save(true, mcprogress);
-    }
 
     if (s_bServerHalted || !NetworkService.IsInSession()) return false;
 
